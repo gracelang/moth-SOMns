@@ -14,6 +14,7 @@ class Platform usingVmMirror: vmMirror = Value (
   public files       = (vmMirror load: 'Files.ns' nextTo: self) usingVmMirror: vmMirror usingPlatform: self.
 |
   vmMirror kernelIndexOutOfBounds: kernel IndexOutOfBounds.
+  vmMirror typeClass: kernel Type.
 )(
   (* start executes the application code and returns an integer as error code,
      or in case of an application that uses actors, a promise that indicates
