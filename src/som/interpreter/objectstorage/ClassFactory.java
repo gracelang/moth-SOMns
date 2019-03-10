@@ -228,6 +228,6 @@ public final class ClassFactory {
       }
     }
 
-    return SomStructuralType.makeType(className, signatures);
+    return SomStructuralType.makeType(className, signatures.toArray(new SSymbol[] {}));
   }
 }

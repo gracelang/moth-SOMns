@@ -50,6 +50,7 @@ import som.interpreter.nodes.ExpressionNode;
 import som.interpreter.nodes.MessageSendNode.AbstractMessageSendNode;
 import som.interpreter.nodes.ResolvingImplicitReceiverSend;
 import som.interpreter.nodes.literals.ArrayLiteralNode;
+import som.interpreter.nodes.literals.BooleanLiteralNode;
 import som.interpreter.nodes.literals.BooleanLiteralNode.FalseLiteralNode;
 import som.interpreter.nodes.literals.BooleanLiteralNode.TrueLiteralNode;
 import som.interpreter.nodes.literals.DoubleLiteralNode;
@@ -221,7 +222,7 @@ public class AstBuilder {
       if (sourceManager.isMainModule()) {
         for (JsonElement element : body) {
           ExpressionNode expression =
-              (ExpressionNode) translator.translate(element.getAsJsonObject());
+              translator.translate(element.getAsJsonObject());
           if (expression != null) {
             expressions.add(expression);
           }
@@ -466,7 +467,7 @@ public class AstBuilder {
       for (int i = 0; i < argumentNodes.length; i++) {
         JsonObject argumentNode = argumentNodes[i];
         ExpressionNode argumentExpression =
-            (ExpressionNode) translator.translate(argumentNode);
+            translator.translate(argumentNode);
 
         if (!(argumentExpression instanceof LiteralNode)) {
           if ((argumentExpression instanceof ResolvingImplicitReceiverSend)) {
@@ -510,7 +511,7 @@ public class AstBuilder {
       for (int i = 0; i < argumentNodes.length; i++) {
         JsonObject argumentNode = argumentNodes[i];
         ExpressionNode argumentExpression =
-            (ExpressionNode) translator.translate(argumentNode);
+            translator.translate(argumentNode);
 
         if (!(argumentExpression instanceof LiteralNode)) {
           if ((argumentExpression instanceof ResolvingImplicitReceiverSend)) {
@@ -821,7 +822,7 @@ public class AstBuilder {
 
       // Translate first receiver as `expression.toString`
       JsonObject firstObj = elements.get(0).getAsJsonObject();
-      ExpressionNode receiver = (ExpressionNode) translator.translate(firstObj);
+      ExpressionNode receiver = translator.translate(firstObj);
       receiver = explicit(symbolFor("asString"), receiver, new ArrayList<ExpressionNode>(),
           translator.source(firstObj));
 
@@ -829,7 +830,7 @@ public class AstBuilder {
         JsonObject operandObj = elements.get(i).getAsJsonObject();
 
         // Set operand as `expression.toString`
-        ExpressionNode operand = (ExpressionNode) translator.translate(operandObj);
+        ExpressionNode operand = translator.translate(operandObj);
         operand = explicit(symbolFor("asString"), operand, new ArrayList<ExpressionNode>(),
             translator.source(operandObj));
 
@@ -849,7 +850,7 @@ public class AstBuilder {
     /**
      * Creates a SOM boolean literal from the given string.
      */
-    public ExpressionNode bool(final String value, final SourceSection sourceSection) {
+    public BooleanLiteralNode bool(final String value, final SourceSection sourceSection) {
       if (value.equals("true")) {
         return new TrueLiteralNode().initialize(sourceSection);
       } else {
@@ -857,25 +858,25 @@ public class AstBuilder {
       }
     }
 
-    public ExpressionNode done(final SourceSection sourceSection) {
+    public NilLiteralNode done(final SourceSection sourceSection) {
       return new NilLiteralNode().initialize(sourceSection);
     }
 
-    public ExpressionNode type(final SSymbol[] signatures, final SourceSection sourceSection) {
+    public STypeLiteral type(final SSymbol[] signatures, final SourceSection sourceSection) {
       return new STypeLiteral(signatures).initialize(sourceSection);
     }
 
     /**
      * Creates a SOM number literal from the given string.
      */
-    public ExpressionNode number(final double value, final SourceSection sourceSection) {
+    public DoubleLiteralNode number(final double value, final SourceSection sourceSection) {
       return new DoubleLiteralNode(value).initialize(sourceSection);
     }
 
     /**
      * Creates a SOM string literal from the given string.
      */
-    public ExpressionNode string(final String value, final SourceSection sourceSection) {
+    public StringLiteralNode string(final String value, final SourceSection sourceSection) {
       String processEscapes = value;
       processEscapes = processEscapes.replace("\\{", "{");
       processEscapes = processEscapes.replace("\\}", "}");
@@ -883,10 +884,11 @@ public class AstBuilder {
       return new StringLiteralNode(processEscapes).initialize(sourceSection);
     }
 
-    public Object array(final JsonObject[] arguments, final SourceSection sourceSection) {
+    public ArrayLiteralNode array(final JsonObject[] arguments,
+        final SourceSection sourceSection) {
       ExpressionNode[] exprs = new ExpressionNode[arguments.length];
       for (int i = 0; i < arguments.length; i++) {
-        exprs[i] = (ExpressionNode) translator.translate(arguments[i]);
+        exprs[i] = translator.translate(arguments[i]);
       }
       return ArrayLiteralNode.create(exprs, sourceSection);
     }
