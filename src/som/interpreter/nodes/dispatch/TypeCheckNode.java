@@ -13,6 +13,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 
+import som.Output;
 import som.interpreter.SomException;
 import som.interpreter.Types;
 import som.interpreter.nodes.ExpressionNode;
@@ -28,6 +29,19 @@ import som.vmobjects.SObjectWithClass;
     @NodeChild(value = "argument", type = ExpressionNode.class)})
 @GenerateNodeFactory
 public abstract class TypeCheckNode extends BinaryExpressionNode {
+  public static long numTypeCheckExecutions;
+  public static long numSubclassChecks;
+  public static int  numTypeCheckLocations;
+  public static int  nTypes;
+
+  public static void reportStats() {
+    if (!VmSettings.COLLECT_TYPE_STATS) {
+      return;
+    }
+    Output.println("RESULT-NumberOfTypeCheckExecutions: " + numTypeCheckExecutions);
+    Output.println("RESULT-NumberOfSubclassChecks: " + numSubclassChecks);
+    Output.println("RESULT-NumberOfTypes: " + nTypes);
+  }
 
   private static final Map<Object, Map<Object, Boolean>> isSubclassTable =
       VmSettings.USE_SUBTYPE_TABLE ? new HashMap<>() : null;
@@ -35,6 +49,9 @@ public abstract class TypeCheckNode extends BinaryExpressionNode {
   public static ExpressionNode create(final ExpressionNode type, final ExpressionNode expr,
       final SourceSection sourceSection) {
     if (VmSettings.USE_TYPE_CHECKING) {
+      if (VmSettings.COLLECT_TYPE_STATS) {
+        ++numTypeCheckLocations;
+      }
       return TypeCheckNodeFactory.create(sourceSection, type, expr);
     }
     return expr;
@@ -51,6 +68,10 @@ public abstract class TypeCheckNode extends BinaryExpressionNode {
       final Object argument) {
     SObjectWithClass expected = (SObjectWithClass) receiver;
 
+    if (VmSettings.COLLECT_TYPE_STATS) {
+      ++numSubclassChecks;
+    }
+
     if (!VmSettings.USE_SUBTYPE_TABLE) {
       return check(expected, argument, null);
     }
@@ -66,6 +87,9 @@ public abstract class TypeCheckNode extends BinaryExpressionNode {
       } else {
         throwTypeError(argument, type);
       }
+    }
+    if (VmSettings.COLLECT_TYPE_STATS) {
+      ++numTypeCheckExecutions;
     }
     return check(expected, argument, isSuper);
   }

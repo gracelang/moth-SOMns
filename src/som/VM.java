@@ -35,13 +35,13 @@ import som.interpreter.actors.Actor.ActorProcessingThreadFactory;
 import som.interpreter.actors.SFarReference;
 import som.interpreter.actors.SPromise;
 import som.interpreter.actors.SPromise.SResolver;
+import som.interpreter.nodes.dispatch.TypeCheckNode;
 import som.primitives.processes.ChannelPrimitives;
 import som.primitives.processes.ChannelPrimitives.ProcessThreadFactory;
 import som.primitives.threading.TaskThreads.ForkJoinThreadFactory;
 import som.primitives.threading.ThreadingModule;
 import som.vm.ObjectSystem;
 import som.vm.Primitives;
-import som.vm.SomStructuralType;
 import som.vm.VmOptions;
 import som.vm.VmSettings;
 import som.vm.constants.KernelObj;
@@ -287,7 +287,7 @@ public final class VM {
 
     shutdownPools();
 
-    SomStructuralType.reportStats();
+    TypeCheckNode.reportStats();
     Actor.reportStats();
     ActorExecutionTrace.waitForTrace();
 
