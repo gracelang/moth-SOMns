@@ -27,9 +27,12 @@ import som.vmobjects.SObjectWithClass;
 @GenerateNodeFactory
 public abstract class TypeCheckNode extends BinaryExpressionNode {
 
-  public static TypeCheckNode create(final ExpressionNode type, final ExpressionNode expr,
+  public static ExpressionNode create(final ExpressionNode type, final ExpressionNode expr,
       final SourceSection sourceSection) {
-    return TypeCheckNodeFactory.create(sourceSection, type, expr);
+    if (VmSettings.USE_TYPE_CHECKING) {
+      return TypeCheckNodeFactory.create(sourceSection, type, expr);
+    }
+    return expr;
   }
 
   protected TypeCheckNode(final SourceSection sourceSection) {
