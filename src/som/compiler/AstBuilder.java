@@ -66,6 +66,7 @@ import som.interpreter.nodes.literals.STypeLiteral;
 import som.interpreter.nodes.literals.StringLiteralNode;
 import som.interpreter.objectstorage.InitializerFieldWrite;
 import som.vm.Symbols;
+import som.vm.VmSettings;
 import som.vmobjects.SSymbol;
 import tools.language.StructuralProbe;
 
@@ -132,7 +133,7 @@ public class AstBuilder {
         final List<Triple<SSymbol, ExpressionNode, SourceSection>> writes) {
       try {
         ExpressionNode typeExp = translator.translate(type);
-        if (typeExp != null) {
+        if (typeExp != null && VmSettings.USE_TYPE_CHECKING) {
           writes.add(
               new Triple<>(symbolFor(slotName.getString() + ":"), typeExp, sourceSection));
         }
