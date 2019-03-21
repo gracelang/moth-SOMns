@@ -23,7 +23,7 @@ import som.interpreter.nodes.LocalVariableNodeFactory.LocalVariableReadNodeGen;
 import som.interpreter.nodes.LocalVariableNodeFactory.LocalVariableWriteNodeGen;
 import som.interpreter.nodes.NonLocalVariableNodeFactory.NonLocalVariableReadNodeGen;
 import som.interpreter.nodes.NonLocalVariableNodeFactory.NonLocalVariableWriteNodeGen;
-import som.vm.SomStructuralType;
+import som.interpreter.nodes.dispatch.TypeCheckNode;
 import som.vm.Symbols;
 import som.vmobjects.SSymbol;
 import tools.SourceCoordinate;
@@ -50,11 +50,11 @@ public abstract class Variable implements bd.inlining.Variable<ExpressionNode> {
     }
   }
 
-  public final SSymbol       name;
-  public final SSymbol       type;
-  public final SourceSection source;
+  public final SSymbol        name;
+  public final ExpressionNode type;
+  public final SourceSection  source;
 
-  Variable(final SSymbol name, final SSymbol type, final SourceSection source) {
+  Variable(final SSymbol name, final ExpressionNode type, final SourceSection source) {
     this.name = name;
     this.type = type;
     this.source = source;
@@ -108,7 +108,7 @@ public abstract class Variable implements bd.inlining.Variable<ExpressionNode> {
   public static final class Argument extends Variable {
     public final int index;
 
-    Argument(final SSymbol name, final SSymbol type, final int index,
+    Argument(final SSymbol name, final ExpressionNode type, final int index,
         final SourceSection source) {
       super(name, type, source);
       this.index = index;
@@ -186,7 +186,7 @@ public abstract class Variable implements bd.inlining.Variable<ExpressionNode> {
   public abstract static class Local extends Variable {
     @CompilationFinal private FrameSlot slot;
 
-    Local(final SSymbol name, final SSymbol type, final SourceSection source) {
+    Local(final SSymbol name, final ExpressionNode type, final SourceSection source) {
       super(name, type, source);
     }
 
@@ -199,7 +199,7 @@ public abstract class Variable implements bd.inlining.Variable<ExpressionNode> {
       transferToInterpreterAndInvalidate("Variable.getReadNode");
       ExpressionNode node;
       if (contextLevel == 0) {
-        node = LocalVariableReadNodeGen.create(this, SomStructuralType.recallTypeByName(type));
+        node = LocalVariableReadNodeGen.create(this);
       } else {
         node = NonLocalVariableReadNodeGen.create(contextLevel, this);
       }
@@ -226,10 +226,14 @@ public abstract class Variable implements bd.inlining.Variable<ExpressionNode> {
     public ExpressionNode getWriteNode(final int contextLevel, final ExpressionNode valueExpr,
         final SourceSection source) {
       transferToInterpreterAndInvalidate("Variable.getWriteNode");
+      if ((this.source.getStartLine() != source.getStartLine()) && !isMutable()) {
+        return null; // Must error on this result
+      }
       ExpressionNode node;
       if (contextLevel == 0) {
-        node = LocalVariableWriteNodeGen.create(this, SomStructuralType.recallTypeByName(type),
-            valueExpr);
+        node = LocalVariableWriteNodeGen.create(this,
+            type != null ? TypeCheckNode.create(type, valueExpr, type.getSourceSection())
+                : valueExpr);
       } else {
         node = NonLocalVariableWriteNodeGen.create(contextLevel, this,
             valueExpr);
@@ -251,7 +255,7 @@ public abstract class Variable implements bd.inlining.Variable<ExpressionNode> {
   }
 
   public static final class MutableLocal extends Local {
-    MutableLocal(final SSymbol name, final SSymbol type,
+    MutableLocal(final SSymbol name, final ExpressionNode type,
         final SourceSection source) {
       super(name, type, source);
     }
@@ -268,7 +272,7 @@ public abstract class Variable implements bd.inlining.Variable<ExpressionNode> {
   }
 
   public static final class ImmutableLocal extends Local {
-    ImmutableLocal(final SSymbol name, final SSymbol type,
+    ImmutableLocal(final SSymbol name, final ExpressionNode type,
         final SourceSection source) {
       super(name, type, source);
     }

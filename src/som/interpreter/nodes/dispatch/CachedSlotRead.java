@@ -27,17 +27,15 @@ import tools.dym.Tags.FieldRead;
  */
 public abstract class CachedSlotRead extends AbstractDispatchNode {
   @Child protected AbstractDispatchNode nextInCache;
-  @Child protected TypeCheckNode        typeCheck;
 
   protected final CheckSObject guardForRcvr;
   protected final SlotAccess   type;
 
   public CachedSlotRead(final SlotAccess type, final CheckSObject guardForRcvr,
-      final TypeCheckNode typeCheck, final AbstractDispatchNode nextInCache) {
+      final AbstractDispatchNode nextInCache) {
     super(nextInCache.sourceSection);
     this.type = type;
     this.guardForRcvr = guardForRcvr;
-    this.typeCheck = typeCheck;
     this.nextInCache = nextInCache;
     assert nextInCache != null;
   }
@@ -81,8 +79,8 @@ public abstract class CachedSlotRead extends AbstractDispatchNode {
   public static final class UnwrittenSlotRead extends CachedSlotRead {
 
     public UnwrittenSlotRead(final SlotAccess type, final CheckSObject guardForRcvr,
-        final TypeCheckNode typeCheck, final AbstractDispatchNode nextInCache) {
-      super(type, guardForRcvr, typeCheck, nextInCache);
+        final AbstractDispatchNode nextInCache) {
+      super(type, guardForRcvr, nextInCache);
     }
 
     @Override
@@ -96,8 +94,8 @@ public abstract class CachedSlotRead extends AbstractDispatchNode {
 
     public ObjectSlotRead(final AbstractObjectAccessor accessor,
         final SlotAccess type, final CheckSObject guardForRcvr,
-        final TypeCheckNode typeCheck, final AbstractDispatchNode nextInCache) {
-      super(type, guardForRcvr, typeCheck, nextInCache);
+        final AbstractDispatchNode nextInCache) {
+      super(type, guardForRcvr, nextInCache);
       this.accessor = accessor;
     }
 
@@ -112,9 +110,9 @@ public abstract class CachedSlotRead extends AbstractDispatchNode {
     protected final IntValueProfile           primMarkProfile;
 
     PrimSlotRead(final AbstractPrimitiveAccessor accessor, final SlotAccess type,
-        final CheckSObject guardForRcvr, final TypeCheckNode typeCheck,
+        final CheckSObject guardForRcvr,
         final AbstractDispatchNode nextInCache) {
-      super(type, guardForRcvr, typeCheck, nextInCache);
+      super(type, guardForRcvr, nextInCache);
       this.accessor = accessor;
       this.primMarkProfile = IntValueProfile.createIdentityProfile();
     }
@@ -124,8 +122,8 @@ public abstract class CachedSlotRead extends AbstractDispatchNode {
 
     public LongSlotReadSetOrUnset(final AbstractPrimitiveAccessor accessor,
         final SlotAccess type, final CheckSObject guardForRcvr,
-        final TypeCheckNode typeCheck, final AbstractDispatchNode nextInCache) {
-      super(accessor, type, guardForRcvr, typeCheck, nextInCache);
+        final AbstractDispatchNode nextInCache) {
+      super(accessor, type, guardForRcvr, nextInCache);
     }
 
     @Override
@@ -141,9 +139,9 @@ public abstract class CachedSlotRead extends AbstractDispatchNode {
   public static final class LongSlotReadSet extends PrimSlotRead {
 
     public LongSlotReadSet(final AbstractPrimitiveAccessor accessor, final SlotAccess type,
-        final CheckSObject guardForRcvr, final TypeCheckNode typeCheck,
+        final CheckSObject guardForRcvr,
         final AbstractDispatchNode nextInCache) {
-      super(accessor, type, guardForRcvr, typeCheck, nextInCache);
+      super(accessor, type, guardForRcvr, nextInCache);
     }
 
     @Override
@@ -152,7 +150,7 @@ public abstract class CachedSlotRead extends AbstractDispatchNode {
         return accessor.readLong(rcvr);
       } else {
         CompilerDirectives.transferToInterpreterAndInvalidate();
-        replace(new LongSlotReadSetOrUnset(accessor, type, guardForRcvr, typeCheck,
+        replace(new LongSlotReadSetOrUnset(accessor, type, guardForRcvr,
             nextInCache));
         return Nil.nilObject;
       }
@@ -163,8 +161,8 @@ public abstract class CachedSlotRead extends AbstractDispatchNode {
 
     public DoubleSlotReadSetOrUnset(final AbstractPrimitiveAccessor accessor,
         final SlotAccess type, final CheckSObject guardForRcvr,
-        final TypeCheckNode typeCheck, final AbstractDispatchNode nextInCache) {
-      super(accessor, type, guardForRcvr, typeCheck, nextInCache);
+        final AbstractDispatchNode nextInCache) {
+      super(accessor, type, guardForRcvr, nextInCache);
     }
 
     @Override
@@ -181,8 +179,8 @@ public abstract class CachedSlotRead extends AbstractDispatchNode {
 
     public DoubleSlotReadSet(final AbstractPrimitiveAccessor accessor,
         final SlotAccess type, final CheckSObject guardForRcvr,
-        final TypeCheckNode typeCheck, final AbstractDispatchNode nextInCache) {
-      super(accessor, type, guardForRcvr, typeCheck, nextInCache);
+        final AbstractDispatchNode nextInCache) {
+      super(accessor, type, guardForRcvr, nextInCache);
     }
 
     @Override
@@ -191,7 +189,7 @@ public abstract class CachedSlotRead extends AbstractDispatchNode {
         return accessor.readDouble(rcvr);
       } else {
         CompilerDirectives.transferToInterpreterAndInvalidate();
-        replace(new DoubleSlotReadSetOrUnset(accessor, type, guardForRcvr, typeCheck,
+        replace(new DoubleSlotReadSetOrUnset(accessor, type, guardForRcvr,
             nextInCache));
         return Nil.nilObject;
       }

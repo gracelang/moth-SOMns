@@ -46,6 +46,7 @@ import com.oracle.truffle.api.source.SourceSection;
 
 import som.interpreter.SomLanguage;
 import som.interpreter.nodes.ExpressionNode;
+import som.interpreter.nodes.LocalVariableNode;
 import som.interpreter.nodes.MessageSendNode.AbstractMessageSendNode;
 import som.vm.SomStructuralType;
 import som.vm.VmSettings;
@@ -239,7 +240,7 @@ public class JsonTreeTranslator {
     }
   }
 
-  private SSymbol returnType(final JsonObject node) {
+  private JsonObject returnType(final JsonObject node) {
     if (!VmSettings.USE_TYPE_CHECKING) { // simply return null if type checking not used
       return null;
     }
@@ -251,9 +252,9 @@ public class JsonTreeTranslator {
         throw new RuntimeException();
       }
 
-      return SomStructuralType.UNKNOWN;
+      return null;// SomStructuralType.UNKNOWN;
     } else {
-      return symbolFor(name(signatureNode.get("returntype").getAsJsonObject()));
+      return signatureNode.get("returntype").getAsJsonObject();
 
     }
   }
@@ -408,7 +409,7 @@ public class JsonTreeTranslator {
    * Extracts the name of type declared inside of the given node, which may be either a
    * typed-parameter or otherwise a simple identifier.
    */
-  private SSymbol typeFor(final JsonObject node) {
+  private JsonObject typeFor(final JsonObject node) {
     if (!VmSettings.USE_TYPE_CHECKING) { // simply return null if type checking not used
       return null;
     }
@@ -416,7 +417,7 @@ public class JsonTreeTranslator {
     String nodeType = nodeType(node);
 
     if (nodeType.equals("typed-parameter")) {
-      return symbolFor(name(node.get("type").getAsJsonObject()));
+      return node.get("type").getAsJsonObject();
 
     } else if (nodeType.equals("identifier")) {
       // no op (returns unknown)
@@ -425,7 +426,7 @@ public class JsonTreeTranslator {
       if (node.get("type").isJsonNull()) {
         // no op (returns unknown)
       } else {
-        return symbolFor(node.get("type").getAsJsonObject().get("name").getAsString());
+        return node.get("type").getAsJsonObject();
       }
 
     } else {
@@ -437,14 +438,15 @@ public class JsonTreeTranslator {
       error(nodeType + " is missing a type annotation", node);
       throw new RuntimeException();
     }
-    return SomStructuralType.UNKNOWN;
+    // TODO: Is this the best way to get types???
+    return null;// SomStructuralType.UNKNOWN;
   }
 
   /**
    * Gets the parameter types for a declaration node.
    */
-  private SSymbol[] typesForParameters(final JsonObject node) {
-    List<SSymbol> types = new ArrayList<SSymbol>();
+  private JsonObject[] typesForParameters(final JsonObject node) {
+    List<JsonObject> types = new ArrayList<JsonObject>();
 
     if (node.has("signature")) {
       for (JsonElement partElement : node.get("signature").getAsJsonObject().get("parts")
@@ -468,7 +470,7 @@ public class JsonTreeTranslator {
       throw new RuntimeException();
     }
 
-    return types.toArray(new SSymbol[types.size()]);
+    return types.toArray(new JsonObject[types.size()]);
   }
 
   /**
@@ -515,8 +517,8 @@ public class JsonTreeTranslator {
     return localNames.toArray(new SSymbol[localNames.size()]);
   }
 
-  private SSymbol[] typesForLocals(final JsonObject node) {
-    List<SSymbol> types = new ArrayList<SSymbol>();
+  private JsonObject[] typesForLocals(final JsonObject node) {
+    List<JsonObject> types = new ArrayList<JsonObject>();
     for (JsonElement element : body(node)) {
       JsonObject eNode = element.getAsJsonObject();
       String type = nodeType(element.getAsJsonObject());
@@ -524,7 +526,25 @@ public class JsonTreeTranslator {
         types.add(typeFor(eNode));
       }
     }
-    return types.toArray(new SSymbol[types.size()]);
+    return types.toArray(new JsonObject[types.size()]);
+  }
+
+  private boolean[] isDefForLocals(final JsonObject node) {
+    List<Boolean> isDefsList = new ArrayList<Boolean>();
+    for (JsonElement element : body(node)) {
+      String type = nodeType(element.getAsJsonObject());
+      if (type.equals("def-declaration")) {
+        isDefsList.add(true);
+      } else if (type.equals("var-declaration")) {
+        isDefsList.add(false);
+      }
+    }
+    boolean[] isDefs = new boolean[isDefsList.size()];
+    int i = 0;
+    for (boolean isDef : isDefsList) {
+      isDefs[i++] = isDef;
+    }
+    return isDefs;
   }
 
   private SourceSection[] sourcesForLocals(final JsonObject node) {
@@ -679,14 +699,16 @@ public class JsonTreeTranslator {
    * node. This method should be used by the {@link AstBuilder} in a recursive-descent style.
    */
   public ExpressionNode translate(final JsonObject node) {
-
-    if (nodeType(node).equals("comment")) {
+    if (node == null) {
+      return null; // TODO: Should this case exist?
+    } else if (nodeType(node).equals("comment")) {
       return null;
 
     } else if (nodeType(node).equals("method-declaration")) {
       astBuilder.objectBuilder.method(selector(node), returnType(node), parameters(node),
           typesForParameters(node), sourcesForParameters(node), locals(node),
-          typesForLocals(node), sourcesForLocals(node), body(node), source(node));
+          typesForLocals(node), isDefForLocals(node), sourcesForLocals(node),
+          body(node), source(node));
       return null;
 
     } else if (nodeType(node).equals("class-declaration")) {
@@ -695,7 +717,8 @@ public class JsonTreeTranslator {
       astBuilder.objectBuilder.clazzDefinition(selector, returnType(node), parameters,
           typesForParameters(node),
           sourcesForParameters(node),
-          locals(node), typesForLocals(node), sourcesForLocals(node), body(node),
+          locals(node), typesForLocals(node), isDefForLocals(node), sourcesForLocals(node),
+          body(node),
           source(node));
       astBuilder.objectBuilder.clazzMethod(selector, returnType(node), parameters,
           typesForParameters(node),
@@ -704,25 +727,32 @@ public class JsonTreeTranslator {
 
     } else if (nodeType(node).equals("object")) {
       return astBuilder.objectBuilder.objectConstructor(locals(node), typesForLocals(node),
-          sourcesForLocals(node), body(node), source(node));
+          isDefForLocals(node), sourcesForLocals(node), body(node), source(node));
 
     } else if (nodeType(node).equals("type-statement")) {
       if (VmSettings.USE_TYPE_CHECKING) {
         SSymbol name = symbolFor(name(node));
         SomStructuralType.recordTypeByName(name,
             SomStructuralType.makeType(name, parseTypeSignatures(node)));
+        // Output.println(name + "= " + prettyPrint(node, "\n ") + "\n\n");
       }
-      astBuilder.objectBuilder.typeStatement(symbolFor(name(node)), null,
+      astBuilder.objectBuilder.typeStatement(symbolFor(name(node)),
           translate((JsonObject) node.get("body")), source(node));
       return null;
     } else if (nodeType(node).equals("block")) {
       return astBuilder.objectBuilder.block(parameters(node), typesForParameters(node),
           sourcesForParameters(node), locals(node), typesForLocals(node),
-          sourcesForLocals(node), body(node), source(node));
+          isDefForLocals(node), sourcesForLocals(node), body(node), source(node));
 
     } else if (nodeType(node).equals("def-declaration")) {
-      return astBuilder.requestBuilder.assignment(symbolFor(name(node)),
+      ExpressionNode en = astBuilder.requestBuilder.assignment(symbolFor(name(node)),
           translate(node.get("value").getAsJsonObject()), source(node));
+      if (en instanceof LocalVariableNode) {
+        return en;
+      }
+      return astBuilder.objectBuilder.slotInitializer(symbolFor(name(node)),
+          translate(typeFor(node)), translate(node.get("value").getAsJsonObject()),
+          source(node));
 
     } else if (nodeType(node).equals("var-declaration")) {
 
@@ -842,7 +872,8 @@ public class JsonTreeTranslator {
   public MixinDefinition translateModule() {
     JsonObject moduleNode = jsonAST.get("module").getAsJsonObject();
     MixinDefinition result = astBuilder.objectBuilder.module(locals(moduleNode),
-        typesForLocals(moduleNode), sourcesForLocals(moduleNode), body(moduleNode),
+        typesForLocals(moduleNode), isDefForLocals(moduleNode), sourcesForLocals(moduleNode),
+        body(moduleNode),
         source(moduleNode));
     return result;
   }

@@ -5,7 +5,6 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.nodes.DirectCallNode;
-import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 
 import som.VM;
@@ -20,14 +19,11 @@ public final class CachedDispatchNode extends AbstractDispatchNode {
 
   @CompilationFinal private final DispatchGuard guard;
 
-  @Children private final TypeCheckNode[] typeChecks;
-
   public CachedDispatchNode(final CallTarget methodCallTarget,
-      final DispatchGuard guard, final TypeCheckNode[] types,
+      final DispatchGuard guard,
       final AbstractDispatchNode nextInCache) {
     super(nextInCache.getSourceSection());
     this.guard = guard;
-    this.typeChecks = types;
     this.nextInCache = nextInCache;
     this.cachedMethod = Truffle.getRuntime().createDirectCallNode(methodCallTarget);
     if (VmSettings.DYNAMIC_METRICS) {
@@ -39,7 +35,6 @@ public final class CachedDispatchNode extends AbstractDispatchNode {
 
   @Override
   public Object executeDispatch(final Object[] arguments) {
-    performTypeChecks(arguments);
 
     Object ret;
     try {
@@ -48,37 +43,10 @@ public final class CachedDispatchNode extends AbstractDispatchNode {
       } else {
         ret = nextInCache.executeDispatch(arguments);
       }
-
-      performReturnValueTypeCheck(ret);
       return ret;
     } catch (InvalidAssumptionException e) {
       CompilerDirectives.transferToInterpreterAndInvalidate();
       return replace(nextInCache).executeDispatch(arguments);
-    }
-  }
-
-  private void performReturnValueTypeCheck(final Object ret) {
-    if (!VmSettings.USE_TYPE_CHECKING) {
-      return;
-    }
-
-    TypeCheckNode node = typeChecks[typeChecks.length - 1];
-    if (node != null) {
-      node.executeTypeCheck(ret);
-    }
-  }
-
-  @ExplodeLoop
-  private void performTypeChecks(final Object[] arguments) {
-    if (!VmSettings.USE_TYPE_CHECKING) {
-      return;
-    }
-
-    for (int i = 0; i < typeChecks.length - 1; i++) { // not the return type
-      TypeCheckNode node = typeChecks[i];
-      if (node != null) {
-        node.executeTypeCheck(arguments[i + 1]);
-      }
     }
   }
 

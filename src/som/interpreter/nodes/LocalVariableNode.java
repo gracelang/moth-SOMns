@@ -9,9 +9,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 
 import bd.inlining.ScopeAdaptationVisitor;
 import som.compiler.Variable.Local;
-import som.interpreter.nodes.dispatch.TypeCheckNode;
 import som.interpreter.nodes.nary.ExprWithTagsNode;
-import som.vm.SomStructuralType;
 import som.vm.constants.Nil;
 import som.vmobjects.SSymbol;
 import tools.Send;
@@ -24,12 +22,9 @@ public abstract class LocalVariableNode extends ExprWithTagsNode implements Send
   protected final FrameSlot slot;
   protected final Local     var;
 
-  @Child protected TypeCheckNode typeCheck;
-
-  private LocalVariableNode(final Local var, final SomStructuralType type) {
+  private LocalVariableNode(final Local var) {
     this.slot = var.getSlot();
     this.var = var;
-    this.typeCheck = type == null ? null : TypeCheckNode.create(type, var.source);
   }
 
   public final Local getLocal() {
@@ -52,13 +47,12 @@ public abstract class LocalVariableNode extends ExprWithTagsNode implements Send
 
   public abstract static class LocalVariableReadNode extends LocalVariableNode {
 
-    public LocalVariableReadNode(final Local variable, final SomStructuralType type) {
-      super(variable, type);
+    public LocalVariableReadNode(final Local variable) {
+      super(variable);
     }
 
-    public LocalVariableReadNode(final LocalVariableReadNode node,
-        final SomStructuralType type) {
-      this(node.var, type);
+    public LocalVariableReadNode(final LocalVariableReadNode node) {
+      this(node.var);
     }
 
     @Specialization(guards = "isUninitialized(frame)")
@@ -85,27 +79,18 @@ public abstract class LocalVariableNode extends ExprWithTagsNode implements Send
     @Specialization(guards = {"isBoolean(frame)"}, rewriteOn = {FrameSlotTypeException.class})
     public final boolean doBoolean(final VirtualFrame frame) throws FrameSlotTypeException {
       boolean ret = frame.getBoolean(slot);
-      if (typeCheck != null) {
-        typeCheck.executeTypeCheck(ret);
-      }
       return ret;
     }
 
     @Specialization(guards = {"isLong(frame)"}, rewriteOn = {FrameSlotTypeException.class})
     public final long doLong(final VirtualFrame frame) throws FrameSlotTypeException {
       long ret = frame.getLong(slot);
-      if (typeCheck != null) {
-        typeCheck.executeTypeCheck(ret);
-      }
       return ret;
     }
 
     @Specialization(guards = {"isDouble(frame)"}, rewriteOn = {FrameSlotTypeException.class})
     public final double doDouble(final VirtualFrame frame) throws FrameSlotTypeException {
       double ret = frame.getDouble(slot);
-      if (typeCheck != null) {
-        typeCheck.executeTypeCheck(ret);
-      }
       return ret;
     }
 
@@ -115,9 +100,6 @@ public abstract class LocalVariableNode extends ExprWithTagsNode implements Send
     public final Object doObject(final VirtualFrame frame)
         throws FrameSlotTypeException, IllegalArgumentException {
       Object ret = frame.getObject(slot);
-      if (typeCheck != null) {
-        typeCheck.executeTypeCheck(ret);
-      }
       return ret;
     }
 
@@ -148,49 +130,36 @@ public abstract class LocalVariableNode extends ExprWithTagsNode implements Send
   @NodeChild(value = "exp", type = ExpressionNode.class)
   public abstract static class LocalVariableWriteNode extends LocalVariableNode {
 
-    public LocalVariableWriteNode(final Local variable, final SomStructuralType type) {
-      super(variable, type);
+    public LocalVariableWriteNode(final Local variable) {
+      super(variable);
     }
 
-    public LocalVariableWriteNode(final LocalVariableWriteNode node,
-        final SomStructuralType type) {
-      super(node.var, type);
+    public LocalVariableWriteNode(final LocalVariableWriteNode node) {
+      super(node.var);
     }
 
     public abstract ExpressionNode getExp();
 
     @Specialization(guards = "isBoolKind(expValue)")
     public final boolean writeBoolean(final VirtualFrame frame, final boolean expValue) {
-      if (typeCheck != null) {
-        typeCheck.executeTypeCheck(expValue);
-      }
       frame.setBoolean(slot, expValue);
       return expValue;
     }
 
     @Specialization(guards = "isLongKind(expValue)")
     public final long writeLong(final VirtualFrame frame, final long expValue) {
-      if (typeCheck != null) {
-        typeCheck.executeTypeCheck(expValue);
-      }
       frame.setLong(slot, expValue);
       return expValue;
     }
 
     @Specialization(guards = "isDoubleKind(expValue)")
     public final double writeDouble(final VirtualFrame frame, final double expValue) {
-      if (typeCheck != null) {
-        typeCheck.executeTypeCheck(expValue);
-      }
       frame.setDouble(slot, expValue);
       return expValue;
     }
 
     @Specialization(replaces = {"writeBoolean", "writeLong", "writeDouble"})
     public final Object writeGeneric(final VirtualFrame frame, final Object expValue) {
-      if (typeCheck != null) {
-        typeCheck.executeTypeCheck(expValue);
-      }
       slot.setKind(FrameSlotKind.Object);
       frame.setObject(slot, expValue);
       return expValue;

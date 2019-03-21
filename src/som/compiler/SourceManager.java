@@ -54,7 +54,7 @@ public class SourceManager {
   }
 
   /**
-   * Creates a section that doesn't correspond to any part of the source code
+   * Creates a section that doesn't correspond to any part of the source code.
    */
   public SourceSection empty() {
     return source.createUnavailableSection();
