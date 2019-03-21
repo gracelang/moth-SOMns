@@ -33,7 +33,6 @@ import static som.vm.Symbols.symbolFor;
 
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 
 import com.google.gson.JsonArray;
@@ -129,13 +128,11 @@ public class AstBuilder {
      * initialized to nil.
      */
     public void addMutableSlot(final SSymbol slotName, final JsonObject type,
-        final SourceSection sourceSection,
-        final List<Triple<SSymbol, ExpressionNode, SourceSection>> writes) {
+        final SourceSection sourceSection) {
       try {
         ExpressionNode typeExp = translator.translate(type);
         if (typeExp != null && VmSettings.USE_TYPE_CHECKING) {
-          writes.add(
-              new Triple<>(symbolFor(slotName.getString() + ":"), typeExp, sourceSection));
+          slotWrite(symbolFor(slotName.getString() + ":"), typeExp, sourceSection);
         }
         scopeManager.peekObject().addSlot(slotName, typeExp,
             AccessModifier.PUBLIC, false, null,
@@ -197,15 +194,13 @@ public class AstBuilder {
             sourceSection);
       }
 
-      List<Triple<SSymbol, ExpressionNode, SourceSection>> slotWrites = new LinkedList<>();
       // Add all other slots for this module
       for (int i = 0; i < locals.length; i++) {
         if (localImmutable[i]) {
           // Don't provide initializer since that will be created later
           addImmutableSlot(locals[i], null, null, localSources[i]);
         } else {
-          addMutableSlot(locals[i], localTypes[i], localSources[i],
-              slotWrites);
+          addMutableSlot(locals[i], localTypes[i], localSources[i]);
         }
       }
 
@@ -247,10 +242,6 @@ public class AstBuilder {
       expressions.add(new IntegerLiteralNode(0).initialize(sourceManager.empty()));
       scopeManager.assembleCurrentMethod(
           SNodeFactory.createSequence(expressions, sourceSection), sourceSection);
-
-      for (Triple<SSymbol, ExpressionNode, SourceSection> write : slotWrites) {
-        slotWrite(write.x, write.y, write.z);
-      }
 
       // Assemble and return the completed module
       return scopeManager.assumbleCurrentModule(sourceSection);
@@ -324,15 +315,13 @@ public class AstBuilder {
         }
       }
 
-      List<Triple<SSymbol, ExpressionNode, SourceSection>> slotWrites = new LinkedList<>();
       // Add all other slots for this module
       for (int i = 0; i < locals.length; i++) {
         if (localImmutable[i]) {
           // Don't provide initializer since that will be created later
           addImmutableSlot(locals[i], null, null, localSources[i]);
         } else {
-          addMutableSlot(locals[i], localTypes[i], localSources[i],
-              slotWrites);
+          addMutableSlot(locals[i], localTypes[i], localSources[i]);
         }
       }
 
@@ -367,10 +356,6 @@ public class AstBuilder {
 
       // Remove the initializer from the stack
       scopeManager.popMethod();
-
-      for (Triple<SSymbol, ExpressionNode, SourceSection> write : slotWrites) {
-        slotWrite(write.x, write.y, write.z);
-      }
 
       // Assemble and return the completed module
       scopeManager.assumbleCurrentClazz(sourceManager.empty());
@@ -459,15 +444,13 @@ public class AstBuilder {
       // Push the initializer onto the stack
       scopeManager.pushMethod(builder.getInitializerMethodBuilder());
 
-      List<Triple<SSymbol, ExpressionNode, SourceSection>> slotWrites = new LinkedList<>();
       // Add all other slots for this module
       for (int i = 0; i < locals.length; i++) {
         if (localImmutable[i]) {
           // Don't provide initializer since that will be created later
           addImmutableSlot(locals[i], null, null, localSources[i]);
         } else {
-          addMutableSlot(locals[i], localTypes[i], localSources[i],
-              slotWrites);
+          addMutableSlot(locals[i], localTypes[i], localSources[i]);
         }
       }
 
@@ -492,10 +475,6 @@ public class AstBuilder {
 
       // Remove the initializer from the stack
       scopeManager.popMethod();
-
-      for (Triple<SSymbol, ExpressionNode, SourceSection> write : slotWrites) {
-        slotWrite(write.x, write.y, write.z);
-      }
 
       // Assemble and return the completed module
       MixinDefinition classDef = scopeManager.assumbleCurrentObject(sourceManager.empty());
@@ -1023,18 +1002,6 @@ public class AstBuilder {
         exprs[i] = translator.translate(arguments[i]);
       }
       return ArrayLiteralNode.create(exprs, sourceSection);
-    }
-  }
-
-  private class Triple<X, Y, Z> {
-    public final X x;
-    public final Y y;
-    public final Z z;
-
-    public Triple(final X x, final Y y, final Z z) {
-      this.x = x;
-      this.y = y;
-      this.z = z;
     }
   }
 }
