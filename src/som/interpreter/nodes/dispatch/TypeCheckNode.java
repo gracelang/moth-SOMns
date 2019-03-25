@@ -20,8 +20,10 @@ import som.interpreter.nodes.ExpressionNode;
 import som.interpreter.nodes.nary.BinaryExpressionNode;
 import som.vm.VmSettings;
 import som.vm.constants.KernelObj;
+import som.vm.constants.Nil;
 import som.vmobjects.SInvokable;
 import som.vmobjects.SObjectWithClass;
+import som.vmobjects.SType;
 
 
 @NodeChildren({
@@ -76,16 +78,17 @@ public abstract class TypeCheckNode extends BinaryExpressionNode {
       return check(expected, argument, null);
     }
 
-    Object type = Types.getClassOf(argument).getFactory().type;
+    SType type = Types.getClassOf(argument).type;
+
     Map<Object, Boolean> isSuper = isSubclassTable.getOrDefault(type, null);
     if (isSuper == null) {
       isSuper = new HashMap<>();
       isSubclassTable.put(type, isSuper);
-    } else if (isSuper.containsKey(receiver)) {
-      if (isSuper.get(receiver)) {
+    } else if (isSuper.containsKey(expected)) {
+      if (isSuper.get(expected)) {
         return argument;
       } else {
-        throwTypeError(argument, type);
+        throwTypeError(argument, type, expected);
       }
     }
     if (VmSettings.COLLECT_TYPE_STATS) {
@@ -97,6 +100,27 @@ public abstract class TypeCheckNode extends BinaryExpressionNode {
   protected final Object check(final SObjectWithClass expected, final Object argument,
       final Map<Object, Boolean> isSuper) {
     CallTarget target = null;
+
+    // If we know that expected is a type, no need to execute message send
+    SType type = Types.getClassOf(argument).type;
+    if (expected instanceof SType) {
+      SType expectedType = (SType) expected;
+      boolean result;
+      if (argument == Nil.nilObject) {
+        // Force nil object to subtype
+        result = true;
+      } else {
+        result = expectedType.isSuperTypeOf(type);
+      }
+
+      if (isSuper != null) {
+        isSuper.put(expected, result);
+      }
+      if (!result) {
+        throwTypeError(argument, type, expected);
+      }
+      return argument;
+    }
 
     for (SInvokable invoke : expected.getSOMClass().getMethods()) {
       if (invoke.getSignature().getString().equals("checkOrError:")) {
@@ -128,13 +152,14 @@ public abstract class TypeCheckNode extends BinaryExpressionNode {
       if (isSuper != null) {
         isSuper.put(expected, false);
       }
-      throwTypeError(argument, Types.getClassOf(argument).getFactory().type);
+      throwTypeError(argument, type, expected);
       throw e;
     }
     return argument;
   }
 
-  protected final void throwTypeError(final Object argument, final Object type) {
+  protected final void throwTypeError(final Object argument, final Object type,
+      final Object expected) {
     CompilerDirectives.transferToInterpreter();
     int line = sourceSection.getStartLine();
     int column = sourceSection.getStartColumn();
@@ -142,6 +167,7 @@ public abstract class TypeCheckNode extends BinaryExpressionNode {
     String suffix = parts[parts.length - 1] + " [" + line + "," + column + "]";
     KernelObj.signalException("signalTypeError:",
         suffix + " " + argument + " is not a subtype of " + sourceSection.getCharacters()
-            + ", because it has the type " + type);
+            + ", because it has the type: \n" + type
+            + "\n    when it was expected to have type: \n" + expected);
   }
 }

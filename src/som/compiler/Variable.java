@@ -2,6 +2,8 @@ package som.compiler;
 
 import static som.interpreter.TruffleCompiler.transferToInterpreterAndInvalidate;
 
+import java.util.function.Supplier;
+
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.frame.FrameDescriptor;
@@ -50,11 +52,12 @@ public abstract class Variable implements bd.inlining.Variable<ExpressionNode> {
     }
   }
 
-  public final SSymbol        name;
-  public final ExpressionNode type;
-  public final SourceSection  source;
+  public final SSymbol                  name;
+  public final Supplier<ExpressionNode> type;
+  public final SourceSection            source;
 
-  Variable(final SSymbol name, final ExpressionNode type, final SourceSection source) {
+  Variable(final SSymbol name, final Supplier<ExpressionNode> type,
+      final SourceSection source) {
     this.name = name;
     this.type = type;
     this.source = source;
@@ -108,7 +111,7 @@ public abstract class Variable implements bd.inlining.Variable<ExpressionNode> {
   public static final class Argument extends Variable {
     public final int index;
 
-    Argument(final SSymbol name, final ExpressionNode type, final int index,
+    Argument(final SSymbol name, final Supplier<ExpressionNode> type, final int index,
         final SourceSection source) {
       super(name, type, source);
       this.index = index;
@@ -186,7 +189,8 @@ public abstract class Variable implements bd.inlining.Variable<ExpressionNode> {
   public abstract static class Local extends Variable {
     @CompilationFinal private FrameSlot slot;
 
-    Local(final SSymbol name, final ExpressionNode type, final SourceSection source) {
+    Local(final SSymbol name, final Supplier<ExpressionNode> type,
+        final SourceSection source) {
       super(name, type, source);
     }
 
@@ -231,8 +235,11 @@ public abstract class Variable implements bd.inlining.Variable<ExpressionNode> {
       }
       ExpressionNode node;
       if (contextLevel == 0) {
+        ExpressionNode typeExpr = type == null ? null : type.get();
         node = LocalVariableWriteNodeGen.create(this,
-            type != null ? TypeCheckNode.create(type, valueExpr, type.getSourceSection())
+            typeExpr != null
+                ? TypeCheckNode.create(typeExpr, valueExpr,
+                    typeExpr.getSourceSection())
                 : valueExpr);
       } else {
         node = NonLocalVariableWriteNodeGen.create(contextLevel, this,
@@ -255,7 +262,7 @@ public abstract class Variable implements bd.inlining.Variable<ExpressionNode> {
   }
 
   public static final class MutableLocal extends Local {
-    MutableLocal(final SSymbol name, final ExpressionNode type,
+    MutableLocal(final SSymbol name, final Supplier<ExpressionNode> type,
         final SourceSection source) {
       super(name, type, source);
     }
@@ -272,7 +279,7 @@ public abstract class Variable implements bd.inlining.Variable<ExpressionNode> {
   }
 
   public static final class ImmutableLocal extends Local {
-    ImmutableLocal(final SSymbol name, final ExpressionNode type,
+    ImmutableLocal(final SSymbol name, final Supplier<ExpressionNode> type,
         final SourceSection source) {
       super(name, type, source);
     }

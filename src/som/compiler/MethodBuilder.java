@@ -29,6 +29,7 @@ import static som.vm.Symbols.symbolFor;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 
 import org.graalvm.collections.EconomicMap;
 
@@ -363,7 +364,7 @@ public final class MethodBuilder extends ScopeBuilder<MethodScope>
     this.returnType = returnType;
   }
 
-  public void addArgument(final SSymbol arg, final ExpressionNode type,
+  public void addArgument(final SSymbol arg, final Supplier<ExpressionNode> type,
       final SourceSection source) {
     if ((Symbols.SELF == arg || Symbols.BLOCK_SELF == arg) && arguments.size() > 0) {
       throw new IllegalStateException(
@@ -387,7 +388,7 @@ public final class MethodBuilder extends ScopeBuilder<MethodScope>
     return l;
   }
 
-  public Local addLocal(final SSymbol name, final ExpressionNode type,
+  public Local addLocal(final SSymbol name, final Supplier<ExpressionNode> type,
       final boolean immutable, final SourceSection source) throws MethodDefinitionError {
     if (arguments.containsKey(name)) {
       throw new MethodDefinitionError("Method already defines argument " + name
@@ -408,7 +409,7 @@ public final class MethodBuilder extends ScopeBuilder<MethodScope>
     return l;
   }
 
-  private Local addLocalAndUpdateScope(final SSymbol name, final ExpressionNode type,
+  private Local addLocalAndUpdateScope(final SSymbol name, final Supplier<ExpressionNode> type,
       final boolean immutable, final SourceSection source) throws MethodDefinitionError {
     Local l = addLocal(name, type, immutable, source);
     scope.addVariable(l);

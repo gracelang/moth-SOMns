@@ -92,6 +92,7 @@ public final class ResolvingImplicitReceiverSend extends AbstractMessageSendNode
   private PreevaluatedExpression reusePreviousSpecialization(final Object[] args) {
     PreevaluatedExpression newNode;
     OuterObjectRead newReceiverNode;
+
     synchronized (this) {
       newNode = replacedBy;
       newReceiverNode = newReceiverNodeForOuterSend;
@@ -183,7 +184,6 @@ public final class ResolvingImplicitReceiverSend extends AbstractMessageSendNode
 
       msgArgNodes[0] = dialectExpr;
     }
-
     ExpressionNode replacementNode =
         MessageSendNode.createMessageSend(selector, msgArgNodes, sourceSection, vm);
 
