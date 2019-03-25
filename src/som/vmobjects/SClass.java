@@ -25,6 +25,8 @@
 package som.vmobjects;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.graalvm.collections.EconomicMap;
 import org.graalvm.collections.EconomicSet;
@@ -44,6 +46,7 @@ import som.compiler.MixinDefinition.SlotDefinition;
 import som.interpreter.nodes.dispatch.Dispatchable;
 import som.interpreter.objectstorage.ClassFactory;
 import som.interpreter.objectstorage.ObjectLayout;
+import som.vm.VmSettings;
 import som.vm.constants.Classes;
 
 
@@ -66,6 +69,8 @@ public final class SClass extends SObjectWithClass {
   @CompilationFinal private boolean         isArray;          // is a subclass of Array
 
   @CompilationFinal private ClassFactory instanceClassGroup; // the factory for this object
+
+  @CompilationFinal public SType type;
 
   protected final SObjectWithClass enclosingObject;
   private final MaterializedFrame  context;
@@ -188,6 +193,7 @@ public final class SClass extends SObjectWithClass {
     this.isTransferObject = isTransferObject;
     this.isArray = isArray;
     this.instanceClassGroup = classFactory;
+    this.type = getType();
     // assert instanceClassGroup != null || !ObjectSystem.isInitialized();
   }
 
@@ -355,5 +361,29 @@ public final class SClass extends SObjectWithClass {
   @Override
   public MaterializedFrame getContext() {
     return context;
+  }
+
+  private SType getType() {
+    if (!VmSettings.USE_TYPE_CHECKING) {
+      return null;
+    }
+
+    Set<SSymbol> signatures = new HashSet<>();
+
+    for (SSymbol sig : dispatchables.getKeys()) {
+      signatures.add(sig);
+    }
+
+    SClass sup = superclass;
+    while (sup != null) {
+      if (sup.dispatchables != null) {
+        for (SSymbol sig : sup.dispatchables.getKeys()) {
+          signatures.add(sig);
+        }
+      }
+      sup = sup.superclass;
+    }
+
+    return new SType.InterfaceType(signatures.toArray(new SSymbol[] {}));
   }
 }
