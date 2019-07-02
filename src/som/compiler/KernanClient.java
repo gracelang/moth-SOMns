@@ -101,9 +101,6 @@ public class KernanClient {
    * This frame class partially implements the frame data structure defined by the Web-socket
    * protocol, @see <a href="https://tools.ietf.org/html/rfc6455">RFC 6455</a>.
    *
-   * Messages that fit into one frame (no more than 65536 bytes) can be sent. If it becomes
-   * necessary, I will extend this class to allow messages to span multiple frames.
-   *
    * Note: frames can only be created using the {@link KernanClient#buildFrame} method, in
    * which both the operation code and the message should be provided directly. Instances of
    * frame objects may only be used to query
@@ -111,56 +108,47 @@ public class KernanClient {
    */
   private final class Frame {
     private static final int OPCODE_INDEX        = 0;
-    private static final int MESSAGE_126_INDEX   = 6;
-    private static final int MESSAGE_65536_INDEX = 8;
+    private static final int MESSAGE_BYTE_INDEX  = 6;
+    private static final int MESSAGE_SHORT_INDEX = 8;
+    private static final int MESSAGE_LONG_INDEX  = 14;
 
     private final byte[] data;
-
+    private final int message_index;
     private Frame(final int len) {
       if (len < 126) {
-        data = new byte[MESSAGE_126_INDEX + len];
+        message_index = MESSAGE_BYTE_INDEX;
+      } else if (len <= 65536) {
+        message_index = MESSAGE_SHORT_INDEX;
       } else {
-        data = new byte[MESSAGE_65536_INDEX + len];
+        message_index = MESSAGE_LONG_INDEX;
       }
+      data = new byte[message_index + len];
     }
 
     private void setOperationCode(final int code) {
       data[OPCODE_INDEX] = (byte) code;
     }
 
-    private void setMessageWithLenLessThan126(final String message) {
-      boolean correct = data.length == (message.length() + MESSAGE_126_INDEX);
-      assert correct : "Message was not the correct size?";
-
-      data[1] = (byte) message.length();
-      for (int i = 0; i < message.length(); i++) {
-        char c = message.charAt(i);
-        data[MESSAGE_126_INDEX + i] = (byte) c;
-      }
-    }
-
-    private void setMessageWithLenGreaterThanOrEqual126(final String message) {
-      boolean correct = data.length == (message.length() + MESSAGE_65536_INDEX);
-      assert correct : "Message was not the correct size?";
-
-      short messageLenIn16bits = (short) message.length();
-      data[1] = (byte) 126;
-      data[2] = (byte) ((messageLenIn16bits >> 8) & 0xFF);
-      data[3] = (byte) (messageLenIn16bits & 0xFF);
-
-      for (int i = 0; i < message.length(); i++) {
-        char c = message.charAt(i);
-        data[MESSAGE_65536_INDEX + i] = (byte) c;
-      }
-
-      return;
-    }
-
-    private void setMessage(final String message) {
-      if (message.length() < 126) {
-        setMessageWithLenLessThan126(message);
+    private void setMessage(final byte[] message) {
+      assert data.length == (message.length + message_index) : "Message was not the correct size?";
+      int length_bytes;
+      if (message_index == MESSAGE_BYTE_INDEX) { // < 126
+        data[1] = (byte) message.length;
+        length_bytes = 0;
+      } else if (message_index == MESSAGE_SHORT_INDEX) { // <= 65536
+        data[1] = (byte) 126;
+        length_bytes = 2;
       } else {
-        setMessageWithLenGreaterThanOrEqual126(message);
+        assert message_index == MESSAGE_LONG_INDEX;
+        data[1] = (byte) 127;
+        length_bytes = 8;
+      }
+      for (int i = 1; i <= length_bytes; i++) {
+        data[1 + i] = (byte)((message.length >> 8*(length_bytes-i)) & 0xFF);
+      }
+
+      for (int i = 0; i < message.length; i++) {
+        data[message_index + i] = message[i];
       }
     }
 
@@ -178,9 +166,12 @@ public class KernanClient {
    * @return - an instance of {@link Frame}
    */
   public Frame buildFrame(final int operationCode, final String message) {
-    Frame frame = new Frame(message.length());
+    byte[] bytes = null;
+    try { message.getBytes("UTF8"); }
+    catch (java.io.UnsupportedEncodingException e) { throw new RuntimeException(e); }
+    Frame frame = new Frame(bytes.length);
     frame.setOperationCode(operationCode);
-    frame.setMessage(message);
+    frame.setMessage(bytes);
     return frame;
   }
 
@@ -354,12 +345,13 @@ public class KernanClient {
       }
 
       // And parse the message itself
-      StringBuilder builder = new StringBuilder();
+      byte[] result = new byte[(int)len];
       for (int i = 0; i < len; i++) {
-        char c = (char) readByte();
-        builder.append(c);
+        result[i] = readByte();
       }
-      String message = builder.toString();
+      String message = null;
+      try { message = new String(result, "UTF8"); }
+      catch (java.io.UnsupportedEncodingException e) { throw new RuntimeException(e); }
 
       // Record the message to the stack
       frames.add(buildFrame(op, message));
