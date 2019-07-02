@@ -4,6 +4,7 @@ import org.graalvm.collections.EconomicMap;
 import org.graalvm.collections.EconomicSet;
 
 import com.oracle.truffle.api.CompilerAsserts;
+import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 
 import som.VM;
 import som.compiler.MixinBuilder.MixinDefinitionId;
@@ -12,6 +13,7 @@ import som.compiler.MixinDefinition.SlotDefinition;
 import som.interpreter.nodes.dispatch.Dispatchable;
 import som.vmobjects.SClass;
 import som.vmobjects.SSymbol;
+import som.vmobjects.SType;
 
 
 /**
@@ -57,6 +59,8 @@ public final class ClassFactory {
 
   private final ClassFactory classClassFactory;
 
+  private @CompilationFinal SType type;
+
   public ClassFactory(final SSymbol name, final MixinDefinition mixinDef,
       final EconomicSet<SlotDefinition> instanceSlots,
       final EconomicMap<SSymbol, Dispatchable> dispatchables,
@@ -86,6 +90,16 @@ public final class ClassFactory {
         : new ObjectLayout(instanceSlots, this, isTransferObject);
 
     this.classClassFactory = classClassFactory;
+
+    this.type = null;
+  }
+
+  public void setType(final SType type) {
+    this.type = type;
+  }
+
+  public SType getType() {
+    return type;
   }
 
   public boolean isDeclaredAsValue() {
