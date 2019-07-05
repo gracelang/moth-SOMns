@@ -59,7 +59,7 @@ public final class ClassFactory {
 
   private final ClassFactory classClassFactory;
 
-  private @CompilationFinal SType type;
+  public @CompilationFinal SType type;
 
   public ClassFactory(final SSymbol name, final MixinDefinition mixinDef,
       final EconomicSet<SlotDefinition> instanceSlots,
