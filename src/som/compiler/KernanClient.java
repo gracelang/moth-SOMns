@@ -146,7 +146,7 @@ public class KernanClient {
         length_bytes = 8;
       }
       for (int i = 1; i <= length_bytes; i++) {
-        data[1 + i] = (byte) ((message.length >> 8 * (length_bytes - i)) & 0xFF);
+        data[1 + i] = (byte) (((long)message.length >> 8 * (length_bytes - i)) & 0xFF);
       }
 
       for (int i = 0; i < message.length; i++) {
