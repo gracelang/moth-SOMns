@@ -4,10 +4,10 @@ import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 
-import som.VM;
 import som.instrumentation.InstrumentableDirectCallNode;
 import som.vm.VmSettings;
 
@@ -29,24 +29,23 @@ public final class CachedDispatchNode extends AbstractDispatchNode {
     if (VmSettings.DYNAMIC_METRICS) {
       this.cachedMethod = insert(new InstrumentableDirectCallNode(cachedMethod,
           nextInCache.getSourceSection()));
-      VM.insertInstrumentationWrapper(cachedMethod);
     }
   }
 
   @Override
-  public Object executeDispatch(final Object[] arguments) {
+  public Object executeDispatch(final VirtualFrame frame, final Object[] arguments) {
 
     Object ret;
     try {
       if (guard.entryMatches(arguments[0], sourceSection)) {
         ret = cachedMethod.call(arguments);
       } else {
-        ret = nextInCache.executeDispatch(arguments);
+        ret = nextInCache.executeDispatch(frame, arguments);
       }
       return ret;
     } catch (InvalidAssumptionException e) {
       CompilerDirectives.transferToInterpreterAndInvalidate();
-      return replace(nextInCache).executeDispatch(arguments);
+      return replace(nextInCache).executeDispatch(frame, arguments);
     }
   }
 

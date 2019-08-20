@@ -44,6 +44,7 @@ import com.oracle.truffle.api.source.SourceSection;
 
 import bd.basic.ProgramDefinitionError;
 import bd.inlining.InlinableNodes;
+import bd.tools.structure.StructuralProbe;
 import som.compiler.MethodBuilder.MethodDefinitionError;
 import som.compiler.MixinBuilder.MixinDefinitionError;
 import som.compiler.MixinDefinition.SlotDefinition;
@@ -69,9 +70,9 @@ import som.interpreter.nodes.literals.StringLiteralNode;
 import som.interpreter.objectstorage.InitializerFieldWrite;
 import som.vm.Symbols;
 import som.vm.VmSettings;
+import som.vmobjects.SInvokable;
 import som.vmobjects.SSymbol;
 import som.vmobjects.SType;
-import tools.language.StructuralProbe;
 
 
 /**
@@ -95,7 +96,7 @@ public class AstBuilder {
 
   public AstBuilder(final JsonTreeTranslator translator, final ScopeManager scopeManager,
       final SourceManager sourceManager, final SomLanguage language,
-      final StructuralProbe probe) {
+      final StructuralProbe<SSymbol, MixinDefinition, SInvokable, SlotDefinition, Variable> probe) {
     this.translator = translator;
     this.language = language;
 
@@ -526,7 +527,9 @@ public class AstBuilder {
         if (!(argumentExpression instanceof LiteralNode)) {
           if ((argumentExpression instanceof ResolvingImplicitReceiverSend)) {
             String argName =
-                ((AbstractMessageSendNode) argumentExpression).getSelector().getString() + "'";
+                ((AbstractMessageSendNode) argumentExpression).getInvocationIdentifier()
+                                                              .getString()
+                    + "'";
             argumentExpression =
                 builder.getInitializerMethodBuilder().getReadNode(symbolFor(argName),
                     sourceSection);
@@ -570,7 +573,9 @@ public class AstBuilder {
         if (!(argumentExpression instanceof LiteralNode)) {
           if ((argumentExpression instanceof ResolvingImplicitReceiverSend)) {
             String argName =
-                ((AbstractMessageSendNode) argumentExpression).getSelector().getString() + "'";
+                ((AbstractMessageSendNode) argumentExpression).getInvocationIdentifier()
+                                                              .getString()
+                    + "'";
             argumentExpression =
                 builder.getInitializerMethodBuilder().getReadNode(symbolFor(argName),
                     sourceSection);
@@ -910,7 +915,7 @@ public class AstBuilder {
     }
 
     /**
-     * Creates a request to the SOM platform module
+     * Creates a request to the SOM platform module.
      */
     private ExpressionNode platformModule() {
       MethodBuilder method = scopeManager.peekMethod();

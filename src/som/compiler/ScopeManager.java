@@ -33,15 +33,16 @@ import java.util.Stack;
 import com.google.gson.JsonObject;
 import com.oracle.truffle.api.source.SourceSection;
 
+import bd.tools.structure.StructuralProbe;
 import som.VM;
 import som.compiler.MixinBuilder.MixinDefinitionError;
+import som.compiler.MixinDefinition.SlotDefinition;
 import som.interpreter.SomLanguage;
 import som.interpreter.nodes.ExpressionNode;
 import som.interpreter.nodes.SequenceNode;
 import som.vm.VmSettings;
 import som.vmobjects.SInvokable;
 import som.vmobjects.SSymbol;
-import tools.language.StructuralProbe;
 
 
 /**
@@ -62,13 +63,14 @@ import tools.language.StructuralProbe;
  */
 public class ScopeManager {
 
-  private final SomLanguage     language;
-  private final StructuralProbe probe;
+  private final SomLanguage                                                                     language;
+  private final StructuralProbe<SSymbol, MixinDefinition, SInvokable, SlotDefinition, Variable> probe;
 
   private final Stack<MixinBuilder>  objects;
   private final Stack<MethodBuilder> methods;
 
-  public ScopeManager(final SomLanguage language, final StructuralProbe probe) {
+  public ScopeManager(final SomLanguage language,
+      final StructuralProbe<SSymbol, MixinDefinition, SInvokable, SlotDefinition, Variable> probe) {
     this.language = language;
     this.probe = probe;
     this.objects = new Stack<MixinBuilder>();
@@ -162,7 +164,7 @@ public class ScopeManager {
   }
 
   /**
-   * Creates a builder that makes a block in the method sitting at the top of the method stack
+   * Creates a builder that makes a block in the method sitting at the top of the method stack.
    */
   public MethodBuilder newBlock(final SSymbol signature) {
     MethodBuilder builder = new MethodBuilder(peekMethod());

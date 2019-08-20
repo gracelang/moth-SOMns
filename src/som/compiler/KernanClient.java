@@ -48,9 +48,12 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.oracle.truffle.api.source.Source;
 
+import bd.tools.structure.StructuralProbe;
 import som.VM;
+import som.compiler.MixinDefinition.SlotDefinition;
 import som.interpreter.SomLanguage;
-import tools.language.StructuralProbe;
+import som.vmobjects.SInvokable;
+import som.vmobjects.SSymbol;
 
 
 /**
@@ -188,7 +191,7 @@ public class KernanClient {
    * this websocket.
    */
   public KernanClient(final Source source, final SomLanguage language,
-      final StructuralProbe structuralProbe) {
+      final StructuralProbe<SSymbol, MixinDefinition, SInvokable, SlotDefinition, Variable> structuralProbe) {
     this.source = source;
     this.vm = language.getVM();
 
@@ -425,7 +428,7 @@ public class KernanClient {
     }
 
     /**
-     * Used by {@link KernanClient#sendCloseFrame()} to send any remaining frames to Kernan
+     * Used by {@link KernanClient#sendCloseFrame()} to send any remaining frames to Kernan.
      */
     public void sendAnyRemainingFrames() {
       run();

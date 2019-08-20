@@ -7,7 +7,7 @@ import bd.inlining.ScopeAdaptationVisitor;
 import som.compiler.MixinDefinition;
 import som.interpreter.nodes.ExpressionNode;
 import som.interpreter.nodes.InstantiationNode.ObjectLiteralInstantiationNode;
-import som.interpreter.nodes.InstantiationNodeFactory.ObjectLiteralInstantiationNodeGen;
+import som.interpreter.nodes.InstantiationNodeFactory;
 import som.interpreter.nodes.MessageSendNode.AbstractMessageSendNode;
 import som.vmobjects.SClass;
 import som.vmobjects.SObjectWithClass;
@@ -38,7 +38,8 @@ public class ObjectLiteralNode extends LiteralNode {
 
     this.outerRead = outerRead;
     this.newMessage = (AbstractMessageSendNode) newMessage;
-    this.instantiation = ObjectLiteralInstantiationNodeGen.create(mixinDefiniton);
+    this.instantiation =
+        InstantiationNodeFactory.ObjectLiteralInstantiationNodeGen.create(mixinDefiniton);
   }
 
   @Override

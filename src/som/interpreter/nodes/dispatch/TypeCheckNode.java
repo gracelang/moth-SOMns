@@ -10,12 +10,14 @@ import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.GenerateNodeFactory;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.SourceSection;
 
 import som.Output;
 import som.interpreter.SomException;
 import som.interpreter.Types;
+import som.interpreter.nodes.ExceptionSignalingNode;
 import som.interpreter.nodes.ExpressionNode;
 import som.interpreter.nodes.dispatch.TypeCheckNodeFactory.BooleanTypeCheckNodeFactory;
 import som.interpreter.nodes.dispatch.TypeCheckNodeFactory.CustomTypeCheckNodeFactory;
@@ -28,9 +30,9 @@ import som.interpreter.nodes.dispatch.TypeCheckNodeFactory.StringTypeCheckNodeFa
 import som.interpreter.nodes.dispatch.TypeCheckNodeFactory.UnresolvedTypeCheckNodeFactory;
 import som.interpreter.nodes.nary.BinaryExpressionNode;
 import som.interpreter.nodes.nary.UnaryExpressionNode;
+import som.vm.Symbols;
 import som.vm.VmSettings;
 import som.vm.constants.Classes;
-import som.vm.constants.KernelObj;
 import som.vm.constants.Nil;
 import som.vmobjects.SArray;
 import som.vmobjects.SBlock;
@@ -60,6 +62,8 @@ public abstract class TypeCheckNode extends BinaryExpressionNode {
     Output.println("RESULT-NumberOfTypes: " + nTypes);
   }
 
+  @Child ExceptionSignalingNode exception;
+
   private static final Map<Object, Map<Object, Boolean>> isSuperclassTable =
       VmSettings.USE_SUBTYPE_TABLE ? new HashMap<>() : null;
   private static final byte[][]                          isSuperclassArray =
@@ -78,16 +82,23 @@ public abstract class TypeCheckNode extends BinaryExpressionNode {
     return expr;
   }
 
-  public static interface ATypeCheckNode {}
+  public interface ATypeCheckNode {}
+
+  protected static ExceptionSignalingNode createExceptionNode(final SourceSection ss) {
+    CompilerDirectives.transferToInterpreter();
+    return ExceptionSignalingNode.createNode(Symbols.symbolFor("TypeError"), ss);
+  }
 
   private static void throwTypeError(final Object argument, final Object type,
-      final Object expected, final SourceSection sourceSection) {
-    CompilerDirectives.transferToInterpreterAndInvalidate();
+      final Object expected, final SourceSection sourceSection,
+      final ExceptionSignalingNode exception) {
+    CompilerDirectives.transferToInterpreter();
     int line = sourceSection.getStartLine();
     int column = sourceSection.getStartColumn();
     String[] parts = sourceSection.getSource().getURI().getPath().split("/");
     String suffix = parts[parts.length - 1] + " [" + line + "," + column + "]";
-    KernelObj.signalException("signalTypeError:",
+
+    exception.signal(
         suffix + " \"" + argument + "\" is not a subtype of " + sourceSection.getCharacters()
             + ", because it has the type: \n" + type
             + "\n    when it was expected to have type: \n" + expected);
@@ -96,12 +107,12 @@ public abstract class TypeCheckNode extends BinaryExpressionNode {
   protected interface TypeCheckingNode<Expected> {
     default <E> E checkTable(final byte[] isSub,
         final SObjectWithClass expected, final E argument, final SType type,
-        final SourceSection sourceSection) {
+        final SourceSection sourceSection, final ExceptionSignalingNode exception) {
       byte sub = isSub[type.id];
       if (sub == SUBTYPE) {
         return argument;
       } else if (sub == FAIL) {
-        throwTypeError(argument, type, expected, sourceSection);
+        throwTypeError(argument, type, expected, sourceSection, exception);
       }
       return null;
     }
@@ -186,7 +197,9 @@ public abstract class TypeCheckNode extends BinaryExpressionNode {
         }
       }
       if (target == null) {
-        CompilerDirectives.transferToInterpreterAndInvalidate();
+        CompilerDirectives.transferToInterpreter();
+        ExceptionSignalingNode exception = insert(createExceptionNode(sourceSection));
+
         // TODO: Support this as yet another node
         // if (isSuper != null) {
         // isSuper.put(expected, false);
@@ -195,8 +208,7 @@ public abstract class TypeCheckNode extends BinaryExpressionNode {
         int column = sourceSection.getStartColumn();
         String[] parts = sourceSection.getSource().getURI().getPath().split("/");
         String suffix = parts[parts.length - 1] + " [" + line + "," + column + "]";
-        KernelObj.signalException("signalTypeError:",
-            suffix + " " + expected + " is not a type");
+        exception.signal(suffix + " " + expected + " is not a type");
         return null;
       }
 
@@ -205,7 +217,6 @@ public abstract class TypeCheckNode extends BinaryExpressionNode {
         // Using HashMap so don't inline (don't need invalidate since the node will be
         // replaced)
         CompilerDirectives.transferToInterpreter();
-
         isSub = isSuperclassTable.getOrDefault(expected, null);
         if (isSub == null) {
           isSub = new HashMap<>();
@@ -227,11 +238,14 @@ public abstract class TypeCheckNode extends BinaryExpressionNode {
     protected final SType  expected;
     protected final byte[] isSub;
 
+    @Child ExceptionSignalingNode exception;
+
     protected PrimitiveTypeCheckNode(final SType expected, final byte[] isSub,
         final SourceSection sourceSection) {
       this.expected = expected;
       this.isSub = isSub;
       this.sourceSection = sourceSection;
+      this.exception = createExceptionNode(sourceSection);
     }
 
     public <E> E check(final E argument, final SType type) {
@@ -240,7 +254,7 @@ public abstract class TypeCheckNode extends BinaryExpressionNode {
       }
 
       if (VmSettings.USE_SUBTYPE_TABLE) {
-        E result = checkTable(isSub, expected, argument, type, sourceSection);
+        E result = checkTable(isSub, expected, argument, type, sourceSection, exception);
         if (result != null) {
           return result;
         }
@@ -262,7 +276,7 @@ public abstract class TypeCheckNode extends BinaryExpressionNode {
         isSub[type.id] = result ? SUBTYPE : FAIL;
       }
       if (!result) {
-        throwTypeError(argument, type, expected, sourceSection);
+        throwTypeError(argument, type, expected, sourceSection, exception);
       }
       return argument;
     }
@@ -274,6 +288,8 @@ public abstract class TypeCheckNode extends BinaryExpressionNode {
 
     protected final SType  expected;
     protected final byte[] isSub;
+
+    @Child ExceptionSignalingNode exception;
 
     protected NonPrimitiveTypeCheckNode(final SType expected, final byte[] isSub,
         final SourceSection sourceSection) {
@@ -330,10 +346,23 @@ public abstract class TypeCheckNode extends BinaryExpressionNode {
       return obj;
     }
 
-    @Specialization
+    protected static final DispatchGuard createGuard(final Object obj) {
+      return DispatchGuard.create(obj);
+    }
+
+    protected static final boolean checkGuard(final DispatchGuard guard,
+        final SObjectWithClass obj) {
+      try {
+        return guard.entryMatches(obj, null);
+      } catch (InvalidAssumptionException e) {} catch (IllegalArgumentException e) {}
+      return false;
+    }
+
+    @Specialization(guards = "checkGuard(guard, obj)")
     public SObjectWithClass checkSObject(final SObjectWithClass obj,
-        @Cached("obj.getSOMClass().type") final SType type) {
-      return check(obj, type);
+        @Cached("createGuard(obj)") final DispatchGuard guard,
+        @Cached("check(obj, obj.getSOMClass().type)") final Object initialRcvrUnused) {
+      return obj;
     }
 
     public <E> E check(final E argument, final SType type) {
@@ -346,7 +375,7 @@ public abstract class TypeCheckNode extends BinaryExpressionNode {
         if (sub == SUBTYPE) {
           return argument;
         } else if (sub == FAIL) {
-          throwTypeError(argument, type, expected, sourceSection);
+          throwTypeError(argument, type, expected, sourceSection, exception);
         }
       }
 
@@ -366,7 +395,7 @@ public abstract class TypeCheckNode extends BinaryExpressionNode {
         isSub[type.id] = result ? SUBTYPE : FAIL;
       }
       if (!result) {
-        throwTypeError(argument, type, expected, sourceSection);
+        throwTypeError(argument, type, expected, sourceSection, exception);
       }
       return argument;
     }
@@ -488,12 +517,18 @@ public abstract class TypeCheckNode extends BinaryExpressionNode {
     protected final CallTarget           target;
     protected final Map<Object, Boolean> isSub;
 
+    @Child ExceptionSignalingNode exception;
+
     protected CustomTypeCheckNode(final SObjectWithClass expected, final CallTarget target,
-        final Map<Object, Boolean> isSub, final SourceSection sourceSection) {
+        final Object isSub_TRUFFLE_REGRESSION, final SourceSection sourceSection) {
+      // Truffle is currently failing to generate correct code for this
+      @SuppressWarnings("unchecked")
+      Map<Object, Boolean> isSub = (Map<Object, Boolean>) isSub_TRUFFLE_REGRESSION;
       this.expected = expected;
       this.target = target;
       this.isSub = isSub;
       this.sourceSection = sourceSection;
+      this.exception = createExceptionNode(sourceSection);
     }
 
     @Specialization
@@ -510,7 +545,7 @@ public abstract class TypeCheckNode extends BinaryExpressionNode {
           if (isSub.get(argType)) {
             result = argument;
           } else {
-            throwTypeError(argument, argType, expected, sourceSection);
+            throwTypeError(argument, argType, expected, sourceSection, exception);
           }
         }
         if (result != null) {
@@ -534,7 +569,7 @@ public abstract class TypeCheckNode extends BinaryExpressionNode {
         if (isSub != null) {
           isSub.put(argType, false);
         }
-        throwTypeError(argument, argType, expected, sourceSection);
+        throwTypeError(argument, argType, expected, sourceSection, exception);
         throw e;
       }
       return argument;

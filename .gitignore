@@ -6,7 +6,9 @@ rebench.conf
 user-dict.txt
 /libs/*.jar
 /libs/*.zip
+/libs/*.tar.gz
 /libs/jacoco
+/libs/jvmci
 jacoco.exec
 jacoco.xml
 /report
