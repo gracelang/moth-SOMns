@@ -26,6 +26,7 @@ import som.interpreter.nodes.dispatch.TypeCheckNodeFactory.LongTypeCheckNodeFact
 import som.interpreter.nodes.dispatch.TypeCheckNodeFactory.NonPrimitiveTypeCheckNodeFactory;
 import som.interpreter.nodes.dispatch.TypeCheckNodeFactory.SArrayTypeCheckNodeFactory;
 import som.interpreter.nodes.dispatch.TypeCheckNodeFactory.SBlockTypeCheckNodeFactory;
+import som.interpreter.nodes.dispatch.TypeCheckNodeFactory.SSymbolTypeCheckNodeFactory;
 import som.interpreter.nodes.dispatch.TypeCheckNodeFactory.StringTypeCheckNodeFactory;
 import som.interpreter.nodes.dispatch.TypeCheckNodeFactory.UnresolvedTypeCheckNodeFactory;
 import som.interpreter.nodes.nary.BinaryExpressionNode;
@@ -39,6 +40,7 @@ import som.vmobjects.SBlock;
 import som.vmobjects.SInvokable;
 import som.vmobjects.SObjectWithClass;
 import som.vmobjects.SObjectWithClass.SObjectWithoutFields;
+import som.vmobjects.SSymbol;
 import som.vmobjects.SType;
 import som.vmobjects.SType.InterfaceType;
 
@@ -84,24 +86,35 @@ public abstract class TypeCheckNode extends BinaryExpressionNode {
 
   public interface ATypeCheckNode {}
 
+  protected abstract static class UnaryTypeCheckingNode extends UnaryExpressionNode
+      implements ATypeCheckNode {
+
+    protected void throwTypeError(final Object argument, final Object type,
+        final Object expected, final SourceSection sourceSection,
+        ExceptionSignalingNode exception) {
+      CompilerDirectives.transferToInterpreter();
+
+      if (exception == null) {
+        ExceptionSignalingNode exNode = ExceptionSignalingNode.createNode(
+            Symbols.symbolFor("TypeError"), sourceSection);
+        insert(exNode);
+        exception = exNode;
+      }
+
+      int line = sourceSection.getStartLine();
+      int column = sourceSection.getStartColumn();
+      String[] parts = sourceSection.getSource().getURI().getPath().split("/");
+      String suffix = parts[parts.length - 1] + " [" + line + "," + column + "]";
+
+      exception.signal(suffix + " \"" + argument + "\" is not a subtype of "
+          + sourceSection.getCharacters() + ", because it has the type: \n" + type
+          + "\n    when it was expected to have type: \n" + expected);
+    }
+  }
+
   protected static ExceptionSignalingNode createExceptionNode(final SourceSection ss) {
     CompilerDirectives.transferToInterpreter();
     return ExceptionSignalingNode.createNode(Symbols.symbolFor("TypeError"), ss);
-  }
-
-  private static void throwTypeError(final Object argument, final Object type,
-      final Object expected, final SourceSection sourceSection,
-      final ExceptionSignalingNode exception) {
-    CompilerDirectives.transferToInterpreter();
-    int line = sourceSection.getStartLine();
-    int column = sourceSection.getStartColumn();
-    String[] parts = sourceSection.getSource().getURI().getPath().split("/");
-    String suffix = parts[parts.length - 1] + " [" + line + "," + column + "]";
-
-    exception.signal(
-        suffix + " \"" + argument + "\" is not a subtype of " + sourceSection.getCharacters()
-            + ", because it has the type: \n" + type
-            + "\n    when it was expected to have type: \n" + expected);
   }
 
   protected interface TypeCheckingNode<Expected> {
@@ -112,10 +125,14 @@ public abstract class TypeCheckNode extends BinaryExpressionNode {
       if (sub == SUBTYPE) {
         return argument;
       } else if (sub == FAIL) {
-        throwTypeError(argument, type, expected, sourceSection, exception);
+        reportError(argument, type, expected, sourceSection, exception);
       }
       return null;
     }
+
+    void reportError(final Object argument, final Object type,
+        final Object expected, final SourceSection sourceSection,
+        final ExceptionSignalingNode exception);
 
     default boolean isNil(final SObjectWithoutFields obj) {
       return obj == Nil.nilObject;
@@ -175,7 +192,11 @@ public abstract class TypeCheckNode extends BinaryExpressionNode {
         } else if (argument instanceof SBlock) {
           node = SBlockTypeCheckNodeFactory.create((SType) expected,
               isSub, sourceSection, argumentExpr);
-          type = Classes.blockClass.type;
+          type = Classes.blockClass.type;;
+        } else if (argument instanceof SSymbol) {
+          node = SSymbolTypeCheckNodeFactory.create((SType) expected,
+              isSub, sourceSection, argumentExpr);
+          type = Classes.symbolClass.type;
         } else {
           NonPrimitiveTypeCheckNode nonPrimNode =
               NonPrimitiveTypeCheckNodeFactory.create((SType) expected,
@@ -184,8 +205,8 @@ public abstract class TypeCheckNode extends BinaryExpressionNode {
           return nonPrimNode.check(argument, ((SObjectWithClass) argument).getSOMClass().type);
         }
 
-        node.check(argument, type);
         replace(node);
+        node.check(argument, type);
         return argument;
       }
 
@@ -232,8 +253,8 @@ public abstract class TypeCheckNode extends BinaryExpressionNode {
     }
   }
 
-  public abstract static class PrimitiveTypeCheckNode extends UnaryExpressionNode
-      implements TypeCheckingNode<SType>, ATypeCheckNode {
+  public abstract static class PrimitiveTypeCheckNode extends UnaryTypeCheckingNode
+      implements TypeCheckingNode<SType> {
 
     protected final SType  expected;
     protected final byte[] isSub;
@@ -246,6 +267,29 @@ public abstract class TypeCheckNode extends BinaryExpressionNode {
       this.isSub = isSub;
       this.sourceSection = sourceSection;
       this.exception = createExceptionNode(sourceSection);
+    }
+
+    @Override
+    public void reportError(final Object argument, final Object type,
+        final Object expected, final SourceSection sourceSection,
+        ExceptionSignalingNode exception) {
+      CompilerDirectives.transferToInterpreter();
+
+      if (exception == null) {
+        ExceptionSignalingNode exNode = ExceptionSignalingNode.createNode(
+            Symbols.symbolFor("TypeError"), sourceSection);
+        insert(exNode);
+        exception = exNode;
+      }
+
+      int line = sourceSection.getStartLine();
+      int column = sourceSection.getStartColumn();
+      String[] parts = sourceSection.getSource().getURI().getPath().split("/");
+      String suffix = parts[parts.length - 1] + " [" + line + "," + column + "]";
+
+      exception.signal(suffix + " \"" + argument + "\" is not a subtype of "
+          + sourceSection.getCharacters() + ", because it has the type: \n" + type
+          + "\n    when it was expected to have type: \n" + expected);
     }
 
     public <E> E check(final E argument, final SType type) {
@@ -283,8 +327,7 @@ public abstract class TypeCheckNode extends BinaryExpressionNode {
   }
 
   @GenerateNodeFactory
-  public abstract static class NonPrimitiveTypeCheckNode extends UnaryExpressionNode
-      implements ATypeCheckNode {
+  public abstract static class NonPrimitiveTypeCheckNode extends UnaryTypeCheckingNode {
 
     protected final SType  expected;
     protected final byte[] isSub;
@@ -346,6 +389,14 @@ public abstract class TypeCheckNode extends BinaryExpressionNode {
       return obj;
     }
 
+    @Specialization
+    public SSymbol checkSSymbol(final SSymbol obj) {
+      check(obj, Classes.symbolClass.type);
+      replace(SSymbolTypeCheckNodeFactory.create(expected, isSub, sourceSection,
+          (ExpressionNode) this.getChildren().iterator().next()));
+      return obj;
+    }
+
     protected static final DispatchGuard createGuard(final Object obj) {
       return DispatchGuard.create(obj);
     }
@@ -363,6 +414,13 @@ public abstract class TypeCheckNode extends BinaryExpressionNode {
         @Cached("createGuard(obj)") final DispatchGuard guard,
         @Cached("check(obj, obj.getSOMClass().type)") final Object initialRcvrUnused) {
       return obj;
+    }
+
+    // FIXME: The above should be fine but causes valid objects to not match a specialisation
+    // without the following -egt
+    @Specialization
+    public SObjectWithClass checkSObject(final SObjectWithClass obj) {
+      return check(obj, obj.getSOMClass().type);
     }
 
     public <E> E check(final E argument, final SType type) {
@@ -510,8 +568,26 @@ public abstract class TypeCheckNode extends BinaryExpressionNode {
   }
 
   @GenerateNodeFactory
-  public abstract static class CustomTypeCheckNode extends UnaryExpressionNode
-      implements TypeCheckingNode<SObjectWithClass>, ATypeCheckNode {
+  public abstract static class SSymbolTypeCheckNode extends PrimitiveTypeCheckNode {
+    protected SSymbolTypeCheckNode(final SType expected, final byte[] isSub,
+        final SourceSection sourceSection) {
+      super(expected, isSub, sourceSection);
+    }
+
+    @Specialization
+    public SSymbol typeCheckSymbol(final SSymbol argument) {
+      return argument;
+    }
+
+    @Specialization
+    public Object typeCheckFail(final Object argument) {
+      return super.check(argument, Types.getClassOf(argument).type);
+    }
+  }
+
+  @GenerateNodeFactory
+  public abstract static class CustomTypeCheckNode extends UnaryTypeCheckingNode
+      implements TypeCheckingNode<SObjectWithClass> {
 
     protected final SObjectWithClass     expected;
     protected final CallTarget           target;
@@ -529,6 +605,12 @@ public abstract class TypeCheckNode extends BinaryExpressionNode {
       this.isSub = isSub;
       this.sourceSection = sourceSection;
       this.exception = createExceptionNode(sourceSection);
+    }
+
+    @Override
+    public void reportError(final Object argument, final Object type, final Object expected,
+        final SourceSection sourceSection, final ExceptionSignalingNode exception) {
+      throwTypeError(argument, type, expected, sourceSection, exception);
     }
 
     @Specialization

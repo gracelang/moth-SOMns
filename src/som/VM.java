@@ -300,6 +300,11 @@ public final class VM {
   }
 
   public void initalize(final SomLanguage lang) throws IOException {
+    if (objectSystem != null) {
+      assert language == lang : "Reinitializing VM, with second language";
+      return;
+    }
+
     Actor.initializeActorSystem(language);
 
     assert objectSystem == null : "Object system was not successfully initialized";

@@ -76,8 +76,7 @@ public abstract class ObjectSerializationNodes {
 
         writes[i] =
             loc.getWriteNode(loc.getSlot(), DispatchGuard.createSObjectCheck(o),
-                next,
-                false);
+                next, false);
       }
       return writes;
     }
@@ -106,8 +105,7 @@ public abstract class ObjectSerializationNodes {
 
         reads[i] =
             loc.getReadNode(SlotAccess.FIELD_READ,
-                DispatchGuard.createSObjectCheck(o),
-                next,
+                DispatchGuard.createSObjectCheck(o), next,
                 false);
       }
 

@@ -22,6 +22,7 @@ import tools.dym.Tags.LocalVarWrite;
 
 public abstract class LocalVariableNode extends ExprWithTagsNode
     implements Invocation<SSymbol> {
+
   protected final FrameSlot       slot;
   protected final FrameDescriptor descriptor;
   protected final Local           var;

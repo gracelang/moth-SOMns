@@ -771,7 +771,8 @@ public class JsonTreeTranslator {
       try {
         language.getVM().loadModule(sourceManager.pathForModuleNamed(symbolFor(path)));
       } catch (IOException e) {
-        error("An error was throwing when eagerly parsing " + path, node);
+        e.printStackTrace();
+        error("An error was thrown when eagerly parsing " + path, node);
         throw new RuntimeException();
       }
       ExpressionNode importExpression =
