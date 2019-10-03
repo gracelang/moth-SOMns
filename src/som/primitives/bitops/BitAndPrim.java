@@ -55,6 +55,9 @@ public abstract class BitAndPrim extends ArithmeticPrim {
     return doBigInteger(left, BigInteger.valueOf(right));
   }
 
+  /**
+   * & is also used as the operator for doing type intersections.
+   */
   @Specialization
   @TruffleBoundary
   public final Object doTypeIntersection(final SType left, final SType right) {

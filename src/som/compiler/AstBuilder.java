@@ -54,7 +54,7 @@ import som.interpreter.SomLanguage;
 import som.interpreter.nodes.ExpressionNode;
 import som.interpreter.nodes.MessageSendNode.AbstractMessageSendNode;
 import som.interpreter.nodes.ResolvingImplicitReceiverSend;
-import som.interpreter.nodes.dispatch.TypeCheckNode;
+import som.interpreter.nodes.TypeCheckNode;
 import som.interpreter.nodes.literals.ArrayLiteralNode;
 import som.interpreter.nodes.literals.BooleanLiteralNode;
 import som.interpreter.nodes.literals.BooleanLiteralNode.FalseLiteralNode;

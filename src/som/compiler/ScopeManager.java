@@ -150,9 +150,8 @@ public class ScopeManager {
    * Creates a builder that makes a method for the object sitting at the top of the object
    * stack.
    *
-   * @param name - the name for the module
-   * @param sourceSection - the source for the module (can be line 1, column 1 of the source
-   *          code)
+   * @param signature - the name for the new method
+   * @param returnType - the JSON object representing the expression of the return type
    * @return the builder
    */
   public MethodBuilder newMethod(final SSymbol signature, final JsonObject returnType) {

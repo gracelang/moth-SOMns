@@ -386,24 +386,28 @@ public final class SClass extends SObjectWithClass {
     return instanceClassGroup.getSerializer();
   }
 
+  /**
+   * Gets the type, constructing it if it hasn't been already.
+   *
+   * @return The type of the class.
+   */
   private SType getType() {
-    if (!VmSettings.USE_TYPE_CHECKING) {
-      return null;
-    }
+    // Use the type from the factory if it has already been created
     SType type = instanceClassGroup.getType();
     if (type != null) {
       return type;
     }
 
-    CompilerDirectives.transferToInterpreterAndInvalidate();
     Set<SSymbol> signatures = new HashSet<>();
 
+    // Add public methods
     for (SSymbol sig : dispatchables.getKeys()) {
       if (dispatchables.get(sig).getAccessModifier() == AccessModifier.PUBLIC) {
         signatures.add(sig);
       }
     }
 
+    // Add public methods of parent
     SClass sup = superclass;
     while (sup != null) {
       if (sup.dispatchables != null) {
@@ -415,6 +419,8 @@ public final class SClass extends SObjectWithClass {
       }
       sup = sup.superclass;
     }
+
+    // Create and return the type
     type = new SType.InterfaceType(signatures.toArray(new SSymbol[] {}));
     instanceClassGroup.setType(type);
     return type;

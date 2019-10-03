@@ -26,8 +26,8 @@ import som.interpreter.nodes.LocalVariableNodeFactory.LocalVariableReadNodeGen;
 import som.interpreter.nodes.LocalVariableNodeFactory.LocalVariableWriteNodeGen;
 import som.interpreter.nodes.NonLocalVariableNodeFactory.NonLocalVariableReadNodeGen;
 import som.interpreter.nodes.NonLocalVariableNodeFactory.NonLocalVariableWriteNodeGen;
-import som.interpreter.nodes.dispatch.TypeCheckNode;
-import som.interpreter.nodes.dispatch.TypeCheckNode.ATypeCheckNode;
+import som.interpreter.nodes.TypeCheckNode;
+import som.interpreter.nodes.TypeCheckNode.ATypeCheckNode;
 import som.vm.Symbols;
 import som.vmobjects.SSymbol;
 
@@ -54,6 +54,10 @@ public abstract class Variable implements bd.inlining.Variable<ExpressionNode> {
   }
 
   public final SSymbol                  name;
+  /**
+   * Creates the type expression used for type checking. Should only be invoked before
+   * execution.
+   */
   public final Supplier<ExpressionNode> type;
   public final SourceSection            source;
 
@@ -238,12 +242,16 @@ public abstract class Variable implements bd.inlining.Variable<ExpressionNode> {
       }
       ExpressionNode node;
       if (contextLevel == 0) {
+        /*
+         * Get the type expression for the variable if it exists or the value being written
+         * isn't already typechecked (this is required to prevent the expression being created
+         * during execuation due to mutation of the AST).
+         */
         ExpressionNode typeExpr =
             valueExpr instanceof ATypeCheckNode || type == null ? null : type.get();
         node = LocalVariableWriteNodeGen.create(this,
             typeExpr != null
-                ? TypeCheckNode.create(typeExpr, valueExpr,
-                    typeExpr.getSourceSection())
+                ? TypeCheckNode.create(typeExpr, valueExpr, typeExpr.getSourceSection())
                 : valueExpr);
       } else {
         node = NonLocalVariableWriteNodeGen.create(contextLevel, this,

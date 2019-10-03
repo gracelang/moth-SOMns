@@ -108,10 +108,22 @@ public final class ClassFactory {
     this.type = null;
   }
 
+  /**
+   * Set the type representing the public interface of objects created by the classes created
+   * by the factory.
+   *
+   * @param type - the type of the classes
+   */
   public void setType(final SType type) {
     this.type = type;
   }
 
+  /**
+   * Get the type representing the public interface of objects created by the classes created
+   * by the factory.
+   *
+   * @return The type of the classes.
+   */
   public SType getType() {
     return type;
   }

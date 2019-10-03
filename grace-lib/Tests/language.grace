@@ -58,6 +58,39 @@ method testBlockReadingLocals {
   "testBlockReadingLocals passed"
 }
 
+method testWhile {
+  def expected = 6
+
+  var result: Number := 1
+  while { result <= 5 } do {
+    result := result + 1
+  }
+  if (result != expected) then { return "testWhile failed on loop: {result} != {expected}" }
+  "testWhile passed"
+}
+
+method testDoWhile {
+  def expected = 5
+
+  var result: Number := 1
+  do {
+    result := result + 1
+  } while { result <= 5 }
+  if (result != expected) then { return "testDoWhile failed on loop: {result} != {expected}" }
+  "testDoWhile passed"
+}
+
+method testRepeat {
+  def expected = 32
+
+  var result: Number := 1
+  repeat 5 times {
+    result := result * 2
+  }
+  if (result != expected) then { return "testRepeat failed on loop: {result} != {expected}" }
+  "testRepeat passed"
+}
+
 method testExpressionsInLoops {
   var sum
   var expected

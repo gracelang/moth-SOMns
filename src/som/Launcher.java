@@ -8,7 +8,7 @@ import org.graalvm.polyglot.Source;
 import org.graalvm.polyglot.Value;
 
 import som.interpreter.SomLanguage;
-import som.interpreter.nodes.dispatch.TypeCheckNode;
+import som.interpreter.nodes.TypeCheckNode;
 import som.interpreter.objectstorage.StorageAccessor;
 import som.vm.VmSettings;
 import tools.concurrency.TracingActors.ReplayActor;

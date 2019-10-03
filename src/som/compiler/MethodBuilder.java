@@ -74,6 +74,10 @@ public final class MethodBuilder extends ScopeBuilder<MethodScope>
   private final SomLanguage language;
 
   private SSymbol    signature;
+  /**
+   * The return type as a JSON object describing the type. This is to be translated into an
+   * actual type expression when the return type is to be used.
+   */
   private JsonObject returnType;
 
   private final List<SourceSection> definition = new ArrayList<>(3);
@@ -364,6 +368,11 @@ public final class MethodBuilder extends ScopeBuilder<MethodScope>
     signature = sig;
   }
 
+  /**
+   * Set the return type for the method.
+   *
+   * @param returnType - the return type described by a JSON object.
+   */
   public void setReturnType(final JsonObject returnType) {
     this.returnType = returnType;
   }
@@ -681,6 +690,11 @@ public final class MethodBuilder extends ScopeBuilder<MethodScope>
         getOuterSelfContextLevel());
   }
 
+  /**
+   * Finds the return type of the method, searching outer methods if needs be.
+   *
+   * @return The JSON object describing the return type.
+   */
   public JsonObject findReturnType() {
     // TODO: Ensure that the expected type of a class doesn't cause a method return to expect
     // that type.

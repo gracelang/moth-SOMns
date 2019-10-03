@@ -101,6 +101,9 @@ public abstract class AdditionPrim extends ArithmeticPrim {
     return left + right.getString();
   }
 
+  /**
+   * + is used for type union representing the methods that both types have.
+   */
   @Specialization
   @TruffleBoundary
   public final SType doTypeUnion(final SType left, final SType right) {

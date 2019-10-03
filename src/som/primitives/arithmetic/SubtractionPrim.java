@@ -64,6 +64,9 @@ public abstract class SubtractionPrim extends ArithmeticPrim {
     return doDouble(left, (double) right);
   }
 
+  /**
+   * '-' is used to perform type subtraction.
+   */
   @Specialization
   @TruffleBoundary
   public final SType doTypeSubtraction(final SType left, final SType right) {
