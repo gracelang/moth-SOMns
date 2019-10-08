@@ -108,6 +108,9 @@ public class AstBuilder {
     literalBuilder = new Literals();
   }
 
+  /**
+   * Delayed translates used for types to generate unique expressions for each type check.
+   */
   public BiFunction<JsonObject, JsonTreeTranslator, Supplier<ExpressionNode>> delayedTranslate =
       (jo, translator) -> () -> translator.translate(jo);
 
@@ -138,12 +141,14 @@ public class AstBuilder {
     public void addMutableSlot(final SSymbol slotName, final JsonObject type,
         final SourceSection sourceSection) {
       try {
+        // Add a type write method if there is a type
         ExpressionNode typeExp = translator.translate(type);
         if (typeExp != null && VmSettings.USE_TYPE_CHECKING) {
           slotWrite(symbolFor(slotName.getString() + ":"),
               delayedTranslate.apply(type, translator),
               sourceSection);
         }
+        // Add the mutable slot
         scopeManager.peekObject().addSlot(slotName, translator.translate(type),
             AccessModifier.PUBLIC, false, null,
             sourceSection);
@@ -346,7 +351,7 @@ public class AstBuilder {
 
       // Add type checks for each of the arguments
       for (Argument arg : instanceFactory.getArguments()) {
-        // Only add the check if it has a type. TODO: Also ignore if type is Unknown
+        // Only add the check if it has a type.
         ExpressionNode typeExpr = arg.type == null ? null : arg.type.get();
         if (typeExpr != null) {
           builder.addInitializerExpression(TypeCheckNode.create(typeExpr,
@@ -655,7 +660,7 @@ public class AstBuilder {
 
       // Add type checks for each of the arguments
       for (Argument arg : builder.getArguments()) {
-        // Only add the check if it has a type. TODO: Also ignore if type is Unknown
+        // Only add the check if it has a type.
         ExpressionNode typeExpr = arg.type == null ? null : arg.type.get();
         if (typeExpr != null) {
           expressions.add(TypeCheckNode.create(typeExpr,
@@ -725,7 +730,7 @@ public class AstBuilder {
 
       // Add type checks for each of the arguments
       for (Argument arg : builder.getArguments()) {
-        // Only add the check if it has a type. TODO: Also ignore if type is Unknown
+        // Only add the check if it has a type.
         ExpressionNode typeExpr = arg.type == null ? null : arg.type.get();
         if (typeExpr != null) {
           expressions.add(TypeCheckNode.create(typeExpr,
@@ -739,15 +744,20 @@ public class AstBuilder {
       for (int i = 0; i < body.size(); ++i) {
         JsonObject element = body.get(i).getAsJsonObject();
         ExpressionNode expr = translator.translate(element);
+        // Ignore statements once a block has been returned from and if they don't exist
         if (expr != null && !returned) {
+          // If the expression is a return or the last statement
           if (element.get("nodetype").getAsString().equals("return") || i == body.size() - 1) {
+            // Wrap the expression in the type if exists
             ExpressionNode returnTypeExpr = translator.translate(returnType);
             if (returnTypeExpr != null) {
               expr = TypeCheckNode.create(returnTypeExpr, expr,
                   returnTypeExpr.getSourceSection());
             }
+            // Stop adding expressions
             returned = true;
           }
+          // Add the expression
           expressions.add(expr);
         }
       }
@@ -759,6 +769,7 @@ public class AstBuilder {
 
     public ExpressionNode slotInitializer(final SSymbol selector, final ExpressionNode type,
         ExpressionNode initializer, final SourceSection source) {
+      // Type check the initializing expression if there is a type
       if (type != null) {
         initializer = TypeCheckNode.create(type, initializer, type.getSourceSection());
       }
@@ -788,6 +799,9 @@ public class AstBuilder {
       scopeManager.assembleCurrentMethod(type, sourceSection);
     }
 
+    /**
+     * Adds a method for writing to a slot that is intended to be type checked.
+     */
     public void slotWrite(final SSymbol selector, final Supplier<ExpressionNode> type,
         final SourceSection sourceSection) {
       MethodBuilder builder = scopeManager.newMethod(selector, null);
@@ -803,6 +817,7 @@ public class AstBuilder {
       arguments.add(TypeCheckNode.create(typeExpr,
           builder.getReadNode(symbolFor("value"), sourceSection),
           typeExpr.getSourceSection()));
+      // Write to the masked field
       expressions.add(requestBuilder.implicit(symbolFor("!!!" + selector.getString()),
           arguments, sourceSection));
       // Assemble and return the completed module
@@ -1006,6 +1021,9 @@ public class AstBuilder {
       return new NilLiteralNode().initialize(sourceSection);
     }
 
+    /**
+     * Creatse a literal for an interface type
+     */
     public STypeLiteral type(final SSymbol[] signatures, final SourceSection sourceSection) {
       return new STypeLiteral(new SType.InterfaceType(signatures)).initialize(sourceSection);
     }

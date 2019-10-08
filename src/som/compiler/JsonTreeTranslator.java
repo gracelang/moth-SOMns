@@ -240,20 +240,29 @@ public class JsonTreeTranslator {
     }
   }
 
+  /**
+   * Gets the return type of an AST node with a signature.
+   *
+   * @param node - class or method definition
+   * @return The AST of the return type expression. Null if the type is unknown (possibly by
+   *         being undefined).
+   */
   private JsonObject returnType(final JsonObject node) {
     if (!VmSettings.USE_TYPE_CHECKING) { // simply return null if type checking not used
       return null;
     }
-
+    // Check that the signature has a return type
     JsonObject signatureNode = node.get("signature").getAsJsonObject();
     if (signatureNode.get("returntype").isJsonNull()) {
+      // Report an error if a type is expected
       if (VmSettings.MUST_BE_FULLY_TYPED) {
         error(nodeType(node) + " is missing a type annotation", node);
         throw new RuntimeException();
       }
-
+      // Otherwise it is unknown
       return null; // SomStructuralType.UNKNOWN;
     } else {
+      // Return the AST of the return type
       return signatureNode.get("returntype").getAsJsonObject();
 
     }
@@ -408,9 +417,12 @@ public class JsonTreeTranslator {
   /**
    * Extracts the name of type declared inside of the given node, which may be either a
    * typed-parameter or otherwise a simple identifier.
+   *
+   * @return The type expression for the node. Null if the type is unknown (or undefined).
    */
   private JsonObject typeFor(final JsonObject node) {
-    if (!VmSettings.USE_TYPE_CHECKING) { // simply return null if type checking not used
+    // simply return null if type checking not used
+    if (!VmSettings.USE_TYPE_CHECKING) {
       return null;
     }
 
@@ -418,28 +430,24 @@ public class JsonTreeTranslator {
 
     if (nodeType.equals("typed-parameter")) {
       return node.get("type").getAsJsonObject();
-
     } else if (nodeType.equals("identifier")) {
       // no op (returns unknown)
-
     } else if (node.has("type")) {
-      if (node.get("type").isJsonNull()) {
-        // no op (returns unknown)
-      } else {
+      // Return the type if it has one
+      if (node.get("type").isJsonObject()) {
         return node.get("type").getAsJsonObject();
       }
-
     } else {
       error("The translator doesn't understand how to get type for " + nodeType, node);
       throw new RuntimeException();
     }
-
+    // Throw an error if a type was required
     if (VmSettings.MUST_BE_FULLY_TYPED) {
       error(nodeType + " is missing a type annotation", node);
       throw new RuntimeException();
     }
-    // TODO: Is this the best way to get types???
-    return null; // SomStructuralType.UNKNOWN;
+    // Return that the type is unknown
+    return null;
   }
 
   /**
@@ -529,6 +537,12 @@ public class JsonTreeTranslator {
     return types.toArray(new JsonObject[types.size()]);
   }
 
+  /**
+   * Gets a mapping between the nth local and whether it is a def statement.
+   *
+   * @param node
+   * @return An array representing the nth local and if it is a def.
+   */
   private boolean[] isDefForLocals(final JsonObject node) {
     List<Boolean> isDefsList = new ArrayList<Boolean>();
     for (JsonElement element : body(node)) {
@@ -647,16 +661,17 @@ public class JsonTreeTranslator {
   public ExpressionNode translate(final JsonObject node) {
     if (node == null) {
       return null; // TODO: Should this case exist?
+      // Ignore comments, no expression
     } else if (nodeType(node).equals("comment")) {
       return null;
-
+      // Add a method, no expression
     } else if (nodeType(node).equals("method-declaration")) {
       astBuilder.objectBuilder.method(selector(node), returnType(node), parameters(node),
           typesForParameters(node), sourcesForParameters(node), locals(node),
           typesForLocals(node), isDefForLocals(node), sourcesForLocals(node),
           body(node), source(node));
       return null;
-
+      // Add a class and the factory method, no expression
     } else if (nodeType(node).equals("class-declaration")) {
       SSymbol selector = selector(node);
       SSymbol[] parameters = parameters(node);
@@ -670,34 +685,38 @@ public class JsonTreeTranslator {
           typesForParameters(node),
           sourcesForParameters(node), source(node));
       return null;
-
+      // Translate an object literal
     } else if (nodeType(node).equals("object")) {
       return astBuilder.objectBuilder.objectConstructor(locals(node), typesForLocals(node),
           isDefForLocals(node), sourcesForLocals(node), body(node), source(node));
-
+      // Add a method defining a type, no expression
     } else if (nodeType(node).equals("type-statement")) {
       astBuilder.objectBuilder.typeStatement(symbolFor(name(node)),
           translate((JsonObject) node.get("body")), source(node));
       return null;
+      // Translate a block literal
     } else if (nodeType(node).equals("block")) {
       return astBuilder.objectBuilder.block(parameters(node), typesForParameters(node),
           sourcesForParameters(node), locals(node), typesForLocals(node),
           isDefForLocals(node), sourcesForLocals(node), body(node), source(node));
-
+      // Translate a def
     } else if (nodeType(node).equals("def-declaration")) {
+      // As an assignment if it is a local variable
       ExpressionNode en = astBuilder.requestBuilder.assignment(symbolFor(name(node)),
           translate(node.get("value").getAsJsonObject()), source(node));
       if (en instanceof LocalVariableNode) {
         return en;
       }
+      // Otherwise it is an initializer for a slot
       return astBuilder.objectBuilder.slotInitializer(symbolFor(name(node)),
           translate(typeFor(node)), translate(node.get("value").getAsJsonObject()),
           source(node));
-
+      // Translate a var
     } else if (nodeType(node).equals("var-declaration")) {
-
+      // AS no expression if just a declaration
       if (node.get("value").isJsonNull()) {
         return null;
+        // As an assignment
       } else {
         return astBuilder.requestBuilder.assignment(symbolFor(name(node)),
             translate(node.get("value").getAsJsonObject()),
@@ -780,7 +799,7 @@ public class JsonTreeTranslator {
       astBuilder.objectBuilder.addImmutableSlot(symbolFor(name(node)), null, importExpression,
           source(node));
       return null;
-
+      // Translate an interface type literal
     } else if (nodeType(node).equals("interface")) {
       SSymbol[] signatures = parseInterfaceSignatures(node);
       return astBuilder.literalBuilder.type(signatures, source(node));
