@@ -863,6 +863,11 @@ public class AstBuilder {
       arguments.add(0, receiver);
       SSymbol selectorAfterChecks = selector;
 
+      // NOTE: Cast functionality to allow us to add manual casts
+      if (selector.getString().equals("cast:")) {
+        return TypeCheckNode.create(receiver, arguments.get(1), sourceSection);
+      }
+
       // Use the Newspeak's `value` methods directly when the selector is Grace's `apply`
       if (selector.getString().contains("apply::")) {
 
@@ -1022,7 +1027,7 @@ public class AstBuilder {
     }
 
     /**
-     * Creatse a literal for an interface type
+     * Creatse a literal for an interface type.
      */
     public STypeLiteral type(final SSymbol[] signatures, final SourceSection sourceSection) {
       return new STypeLiteral(new SType.InterfaceType(signatures)).initialize(sourceSection);

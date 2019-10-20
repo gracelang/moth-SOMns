@@ -86,7 +86,7 @@ public abstract class SType extends SObjectWithClass {
    * @param inst - the object of being check as a sub type
    * @return Whether this type is a super type.
    */
-  public abstract boolean isSuperTypeOf(final SType other, final Object inst);
+  public abstract boolean isSuperTypeOf(SType other, Object inst);
 
   /**
    * Represents a type describing the public methods of an object.

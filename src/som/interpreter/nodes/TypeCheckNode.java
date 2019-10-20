@@ -197,9 +197,8 @@ public abstract class TypeCheckNode extends BinaryExpressionNode {
     /**
      * The method that should call throwTypeError.
      */
-    void reportError(final Object argument, final Object type,
-        final Object expected, final SourceSection sourceSection,
-        final ExceptionSignalingNode exception);
+    void reportError(Object argument, Object type, Object expected,
+        SourceSection sourceSection, ExceptionSignalingNode exception);
 
     /**
      * Checks whether an object is Nil.
@@ -280,7 +279,7 @@ public abstract class TypeCheckNode extends BinaryExpressionNode {
         } else if (argument instanceof SBlock) {
           node = SBlockTypeCheckNodeFactory.create((SType) expected,
               isSub, sourceSection, argumentExpr);
-          type = Classes.blockClass.type;;
+          type = Classes.blockClass.type;
         } else if (argument instanceof SSymbol) {
           node = SSymbolTypeCheckNodeFactory.create((SType) expected,
               isSub, sourceSection, argumentExpr);

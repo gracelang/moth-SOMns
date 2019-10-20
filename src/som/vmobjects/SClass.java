@@ -43,6 +43,7 @@ import som.compiler.MixinBuilder.MixinDefinitionId;
 import som.compiler.MixinDefinition;
 import som.compiler.MixinDefinition.ClassSlotDefinition;
 import som.compiler.MixinDefinition.SlotDefinition;
+import som.interpreter.TruffleCompiler;
 import som.interpreter.nodes.dispatch.Dispatchable;
 import som.interpreter.objectstorage.ClassFactory;
 import som.interpreter.objectstorage.ObjectLayout;
@@ -398,12 +399,15 @@ public final class SClass extends SObjectWithClass {
       return type;
     }
 
+    TruffleCompiler.transferToInterpreterAndInvalidate("Building a type with a set");
     Set<SSymbol> signatures = new HashSet<>();
 
     // Add public methods
-    for (SSymbol sig : dispatchables.getKeys()) {
-      if (dispatchables.get(sig).getAccessModifier() == AccessModifier.PUBLIC) {
-        signatures.add(sig);
+    if (dispatchables != null) {
+      for (SSymbol sig : dispatchables.getKeys()) {
+        if (dispatchables.get(sig).getAccessModifier() == AccessModifier.PUBLIC) {
+          signatures.add(sig);
+        }
       }
     }
 
