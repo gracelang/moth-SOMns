@@ -54,6 +54,7 @@ import som.vm.Symbols;
 import som.vm.VmSettings;
 import som.vm.constants.Classes;
 import som.vm.constants.Nil;
+import som.vmobjects.Capability;
 import som.vmobjects.SClass;
 import som.vmobjects.SInvokable;
 import som.vmobjects.SInvokable.SInitializer;
@@ -99,6 +100,8 @@ public final class MixinDefinition implements SomInteropObject {
   private final boolean isModule;
 
   private final EconomicMap<SSymbol, MixinDefinition> nestedMixinDefinitions;
+
+  public Capability capability = Capability.UNSAFE;
 
   // These nodes are used to throw the exception in the parser, where we don't have an AST.
   protected static final ExceptionSignalingNode notAValue;

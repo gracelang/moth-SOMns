@@ -66,7 +66,7 @@ public class SInvokable extends SAbstractObject implements Dispatchable {
       final Invokable invokable, final SInvokable[] embeddedBlocks) {
     this.signature = signature;
     this.accessModifier = accessModifier;
-
+    this.capability = Capability.UNSAFE;
     this.invokable = invokable;
     this.callTarget = invokable.createCallTarget();
     this.embeddedBlocks = embeddedBlocks;

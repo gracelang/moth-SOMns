@@ -17,8 +17,8 @@ public final class CachedTxSlotWrite extends CachedSlotWrite {
   }
 
   @Override
-  public void doWrite(final SObject obj, final Object value) {
+  public Object doWrite(final SObject obj, final Object value) {
     SMutableObject workingCopy = Transactions.workingCopy((SMutableObject) obj);
-    write.doWrite(workingCopy, value);
+    return write.doWrite(workingCopy, value);
   }
 }

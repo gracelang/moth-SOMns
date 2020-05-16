@@ -11,6 +11,7 @@ import org.junit.Test;
 import som.compiler.AccessModifier;
 import som.compiler.MixinDefinition.SlotDefinition;
 import som.tests.ParallelHelper;
+import som.vmobjects.Capability;
 import som.vmobjects.SClass;
 import som.vmobjects.SObject.SMutableObject;
 
@@ -74,7 +75,7 @@ public class SafepointPhaserTest {
       }
 
       ObjectTransitionSafepoint.INSTANCE.transitionObject(
-          new SMutableObject(instanceClass, factory, layout));
+          new SMutableObject(instanceClass, Capability.UNSAFE, factory, layout));
 
       ObjectTransitionSafepoint.INSTANCE.unregister();
       return null;
@@ -90,7 +91,7 @@ public class SafepointPhaserTest {
 
       for (int i = 0; i < 500_000; i += 1) {
         ObjectTransitionSafepoint.INSTANCE.transitionObject(
-            new SMutableObject(instanceClass, factory, layout));
+            new SMutableObject(instanceClass, Capability.UNSAFE, factory, layout));
       }
 
       ObjectTransitionSafepoint.INSTANCE.unregister();
@@ -108,7 +109,7 @@ public class SafepointPhaserTest {
       for (int i = 0; i < 100_000; i += 1) {
         if (id == 0) {
           ObjectTransitionSafepoint.INSTANCE.transitionObject(
-              new SMutableObject(instanceClass, factory, layout));
+              new SMutableObject(instanceClass, Capability.UNSAFE, factory, layout));
         } else {
           ObjectTransitionSafepoint.INSTANCE.checkAndPerformSafepoint();
         }
@@ -127,7 +128,7 @@ public class SafepointPhaserTest {
         ObjectTransitionSafepoint.INSTANCE.register();
 
         ObjectTransitionSafepoint.INSTANCE.transitionObject(
-            new SMutableObject(instanceClass, factory, layout));
+            new SMutableObject(instanceClass, Capability.UNSAFE, factory, layout));
 
         ObjectTransitionSafepoint.INSTANCE.unregister();
       }
@@ -144,7 +145,7 @@ public class SafepointPhaserTest {
 
         if (id == 0) {
           ObjectTransitionSafepoint.INSTANCE.transitionObject(
-              new SMutableObject(instanceClass, factory, layout));
+              new SMutableObject(instanceClass, Capability.UNSAFE, factory, layout));
         } else {
           ObjectTransitionSafepoint.INSTANCE.checkAndPerformSafepoint();
         }

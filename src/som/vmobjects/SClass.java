@@ -76,6 +76,8 @@ public final class SClass extends SObjectWithClass {
 
   @CompilationFinal public SType type;
 
+  public Capability initialInstanceCapability;
+
   protected final SObjectWithClass enclosingObject;
   private final MaterializedFrame  context;
 
@@ -85,6 +87,8 @@ public final class SClass extends SObjectWithClass {
    */
   public SClass(final SObjectWithClass enclosing) {
     this.enclosingObject = enclosing;
+    this.capability = Capability.IMMUTABLE;
+    this.initialInstanceCapability = enclosing.capability;
     this.context = null;
   }
 
@@ -93,7 +97,7 @@ public final class SClass extends SObjectWithClass {
    * do not have an enclosing activation).
    */
   public SClass(final SObjectWithClass enclosing, final SClass clazz) {
-    super(clazz, clazz.getInstanceFactory());
+    super(clazz, Capability.IMMUTABLE, clazz.getInstanceFactory());
     this.enclosingObject = enclosing;
     this.context = null;
   }
@@ -105,7 +109,8 @@ public final class SClass extends SObjectWithClass {
    */
   public SClass(final SObjectWithClass enclosing, final SClass clazz,
       final MaterializedFrame frame) {
-    super(clazz, clazz.getInstanceFactory());
+    super(clazz, Capability.IMMUTABLE, clazz.getInstanceFactory());
+    this.initialInstanceCapability = enclosing.capability;
     this.enclosingObject = enclosing;
     this.context = frame;
   }
@@ -190,6 +195,7 @@ public final class SClass extends SObjectWithClass {
       final ClassFactory classFactory) {
     assert slots == null || slots.size() > 0;
 
+    this.initialInstanceCapability = mixinDef.capability;
     this.mixinDef = mixinDef;
     this.slots = slots;
     this.dispatchables = dispatchables;

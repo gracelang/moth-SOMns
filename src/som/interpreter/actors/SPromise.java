@@ -11,6 +11,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import som.interpreter.actors.EventualMessage.PromiseMessage;
 import som.interpreter.objectstorage.ClassFactory;
 import som.vm.VmSettings;
+import som.vmobjects.Capability;
 import som.vmobjects.SClass;
 import som.vmobjects.SObjectWithClass;
 import tools.concurrency.KomposTrace;
@@ -85,7 +86,7 @@ public class SPromise extends SObjectWithClass {
 
   protected SPromise(final Actor owner, final boolean haltOnResolver,
       final boolean haltOnResolution) {
-    super(promiseClass, promiseClass.getInstanceFactory());
+    super(promiseClass, Capability.UNSAFE, promiseClass.getInstanceFactory());
     assert owner != null;
     this.owner = owner;
     this.haltOnResolver = haltOnResolver;
@@ -356,7 +357,7 @@ public class SPromise extends SObjectWithClass {
     protected final SPromise promise;
 
     private SResolver(final SPromise promise) {
-      super(resolverClass, resolverClass.getInstanceFactory());
+      super(resolverClass, Capability.UNSAFE, resolverClass.getInstanceFactory());
       this.promise = promise;
       assert resolverClass != null;
     }

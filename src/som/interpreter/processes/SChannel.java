@@ -7,6 +7,7 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import som.interpreter.objectstorage.ObjectTransitionSafepoint;
 import som.primitives.processes.ChannelPrimitives;
 import som.vm.VmSettings;
+import som.vmobjects.Capability;
 import som.vmobjects.SAbstractObject;
 import som.vmobjects.SClass;
 import tools.concurrency.TracingChannel;
@@ -36,7 +37,7 @@ public class SChannel extends SAbstractObject {
   protected SChannel() {
     breakAfterRead = false;
     breakAfterWrite = false;
-
+    capability = Capability.IMMUTABLE;
     SynchronousQueue<Object> cell = new SynchronousQueue<>();
 
     out = SChannelOutput.create(cell, this);
@@ -73,6 +74,7 @@ public class SChannel extends SAbstractObject {
 
     public SChannelInput(final SynchronousQueue<Object> cell,
         final SChannel channel) {
+      this.capability = this.capability.IMMUTABLE;
       this.cell = cell;
       this.channel = channel;
     }
@@ -124,6 +126,7 @@ public class SChannel extends SAbstractObject {
 
     protected SChannelOutput(final SynchronousQueue<Object> cell, final SChannel channel) {
       this.cell = cell;
+      this.capability = Capability.IMMUTABLE;
       this.channel = channel;
     }
 

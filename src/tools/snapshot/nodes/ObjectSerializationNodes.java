@@ -20,6 +20,7 @@ import som.interpreter.objectstorage.ClassFactory;
 import som.interpreter.objectstorage.ObjectLayout;
 import som.interpreter.objectstorage.ObjectTransitionSafepoint;
 import som.interpreter.objectstorage.StorageLocation;
+import som.vmobjects.Capability;
 import som.vmobjects.SObject;
 import som.vmobjects.SObject.SImmutableObject;
 import som.vmobjects.SObject.SMutableObject;
@@ -224,6 +225,7 @@ public abstract class ObjectSerializationNodes {
             classFact.getInstanceLayout());
       } else {
         o = new SMutableObject(SnapshotBackend.lookupClass(classFact.getIdentifier()),
+            Capability.UNSAFE,
             classFact,
             classFact.getInstanceLayout());
       }
@@ -277,7 +279,7 @@ public abstract class ObjectSerializationNodes {
     @Override
     public Object deserialize(final DeserializationBuffer sb) {
       return new SObjectWithoutFields(SnapshotBackend.lookupClass(classFact.getIdentifier()),
-          classFact);
+          Capability.IMMUTABLE, classFact);
     }
   }
 }

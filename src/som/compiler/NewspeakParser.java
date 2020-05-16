@@ -106,6 +106,7 @@ import som.interpreter.nodes.literals.StringLiteralNode;
 import som.interpreter.nodes.literals.SymbolLiteralNode;
 import som.vm.Symbols;
 import som.vm.VmSettings;
+import som.vmobjects.Capability;
 import som.vmobjects.SInvokable;
 import som.vmobjects.SSymbol;
 import tools.debugger.Tags.ArgumentTag;
@@ -335,6 +336,7 @@ public class NewspeakParser {
 
     MixinBuilder mxnBuilder = new MixinBuilder(outerBuilder, accessModifier,
         symbolFor(mixinName), nameSS, structuralProbe, language);
+    mxnBuilder.capability = Capability.UNSAFE;
 
     MethodBuilder primaryFactory = mxnBuilder.getPrimaryFactoryMethodBuilder();
     coord = getCoordinate();
@@ -739,6 +741,7 @@ public class NewspeakParser {
       final SourceCoordinate coord, final MixinBuilder mxnBuilder)
       throws ProgramDefinitionError {
     MixinBuilder nestedCls = classDeclaration(mxnBuilder, accessModifier);
+    nestedCls.capability = Capability.UNSAFE;
     mxnBuilder.addNestedMixin(nestedCls.assemble(getSource(coord)));
   }
 

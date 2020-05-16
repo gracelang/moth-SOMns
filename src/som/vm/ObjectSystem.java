@@ -41,6 +41,7 @@ import som.interpreter.objectstorage.ObjectTransitionSafepoint;
 import som.vm.constants.Classes;
 import som.vm.constants.KernelObj;
 import som.vm.constants.Nil;
+import som.vmobjects.Capability;
 import som.vmobjects.SClass;
 import som.vmobjects.SInvokable;
 import som.vmobjects.SObject;
@@ -171,7 +172,8 @@ public final class ObjectSystem {
   private SObjectWithoutFields constructVmMirror() {
     EconomicMap<SSymbol, Dispatchable> vmMirrorMethods = primitives.takeVmMirrorPrimitives();
     SClass vmMirrorClass = constructPrimitiveClass(vmMirrorMethods);
-    return new SObjectWithoutFields(vmMirrorClass, vmMirrorClass.getInstanceFactory());
+    return new SObjectWithoutFields(vmMirrorClass, Capability.UNSAFE,
+        vmMirrorClass.getInstanceFactory());
   }
 
   private MixinDefinition constructPrimitiveMixin(final String module,
@@ -516,7 +518,8 @@ public final class ObjectSystem {
 
       try {
         Thread.sleep(500);
-      } catch (InterruptedException e) {}
+      } catch (InterruptedException e) {
+      }
 
       // never timeout when debugging
       if (vm.isPoolIdle() && !VmSettings.TRUFFLE_DEBUGGER_ENABLED) {

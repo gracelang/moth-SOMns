@@ -117,7 +117,7 @@ public final class MessageSendNode {
   public abstract static class AbstractMessageSendNode extends ExprWithTagsNode
       implements PreevaluatedExpression, Invocation<SSymbol> {
 
-    @Children protected final ExpressionNode[] argumentNodes;
+    @Children public final ExpressionNode[] argumentNodes;
 
     protected AbstractMessageSendNode(final ExpressionNode[] arguments) {
       this.argumentNodes = arguments;
@@ -305,7 +305,7 @@ public final class MessageSendNode {
     }
   }
 
-  private static final class UninitializedSymbolSendNode
+  public static final class UninitializedSymbolSendNode
       extends AbstractUninitializedMessageSendNode {
 
     protected UninitializedSymbolSendNode(final SSymbol selector, final VM vm) {

@@ -23,6 +23,7 @@ public abstract class SArray extends SAbstractObject {
   protected SArray(final long length, final SClass clazz) {
     storage = (int) length;
     this.clazz = clazz;
+    this.capability = Capability.UNSAFE;
   }
 
   protected SArray(final Object storage, final SClass clazz) {
@@ -30,6 +31,7 @@ public abstract class SArray extends SAbstractObject {
     assert storage != null;
     this.storage = storage;
     this.clazz = clazz;
+    this.capability = Capability.UNSAFE;
   }
 
   @Override
@@ -370,10 +372,12 @@ public abstract class SArray extends SAbstractObject {
 
     public SImmutableArray(final long length, final SClass clazz) {
       super(length, clazz);
+      this.capability = Capability.IMMUTABLE;
     }
 
     public SImmutableArray(final Object storage, final SClass clazz) {
       super(storage, clazz);
+      this.capability = Capability.IMMUTABLE;
     }
 
     @Override

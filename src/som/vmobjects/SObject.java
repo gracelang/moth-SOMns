@@ -56,7 +56,7 @@ public abstract class SObject extends SObjectWithClass {
 
     public SImmutableObject(final SClass instanceClass, final ClassFactory classGroup,
         final ObjectLayout layout) {
-      super(instanceClass, classGroup, layout);
+      super(instanceClass, Capability.IMMUTABLE, classGroup, layout);
       field1 = field2 = field3 = field4 = field5 = Nil.nilObject;
       isValue = instanceClass.declaredAsValue();
     }
@@ -65,6 +65,7 @@ public abstract class SObject extends SObjectWithClass {
         final boolean isKernelObj) {
       super(incompleteDefinition);
       assert isKernelObj;
+      this.capability = Capability.IMMUTABLE;
       isValue = true;
     }
 
@@ -131,9 +132,10 @@ public abstract class SObject extends SObjectWithClass {
     // SMutableObject and SImmuableObject
     @SuppressWarnings("unused") private boolean isValueOfSImmutableObjectSync;
 
-    public SMutableObject(final SClass instanceClass, final ClassFactory factory,
+    public SMutableObject(final SClass instanceClass, final Capability capability,
+        final ClassFactory factory,
         final ObjectLayout layout) {
-      super(instanceClass, factory, layout);
+      super(instanceClass, capability, factory, layout);
       field1 = field2 = field3 = field4 = field5 = Nil.nilObject;
     }
 
@@ -276,9 +278,10 @@ public abstract class SObject extends SObjectWithClass {
   @CompilationFinal protected ObjectLayout objectLayout;
   public int                               primitiveUsedMap;
 
-  public SObject(final SClass instanceClass, final ClassFactory factory,
+  public SObject(final SClass instanceClass, final Capability capability,
+      final ClassFactory factory,
       final ObjectLayout layout) {
-    super(instanceClass, factory);
+    super(instanceClass, capability, factory);
     assert factory.getInstanceLayout() == layout
         || layout.layoutForSameClasses(factory.getInstanceLayout());
     setLayoutInitially(layout);
@@ -292,7 +295,7 @@ public abstract class SObject extends SObjectWithClass {
   protected SObject(final SObject old) {
     super(old);
     this.objectLayout = old.objectLayout;
-
+    this.capability = old.capability;
     this.primitiveUsedMap = old.primitiveUsedMap;
 
     // TODO: these tests should be compilation constant based on the object layout, check

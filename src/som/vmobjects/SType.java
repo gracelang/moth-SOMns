@@ -52,6 +52,7 @@ public abstract class SType extends SObjectWithClass {
 
   public SType() {
     super();
+    this.capability = Capability.IMMUTABLE;
     // Either add the type class now or record this type to do so later
     if (typeClass == null) {
       missingClass.add(this);
@@ -228,6 +229,38 @@ public abstract class SType extends SObjectWithClass {
     @Override
     public String toString() {
       return "a Brand";
+    }
+  }
+
+  /**
+   * Represents a type that contains all objects of a certain capability.
+   */
+  public static class CapabilityType extends SType {
+
+    private final Capability capability;
+
+    public CapabilityType(final Capability capability) {
+      this.capability = capability;
+    }
+
+    @Override
+    public boolean isSuperTypeOf(final SType other, final Object inst) {
+      if (inst instanceof SAbstractObject) {
+        return capability.equals(((SAbstractObject) inst).capability);
+      }
+      // All other values must be immutable
+      return capability == Capability.IMMUTABLE;
+    }
+
+    @Override
+    public SSymbol[] getSignatures() {
+      // Signatures from brand types are not usable
+      return new SSymbol[] {};
+    }
+
+    @Override
+    public String toString() {
+      return capability.toString();
     }
   }
 }

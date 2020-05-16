@@ -30,6 +30,8 @@ import som.primitives.ObjectPrims.IsValue;
 import som.vm.Activity;
 import som.vm.Symbols;
 import som.vm.VmSettings;
+import som.vmobjects.Capability;
+import som.vmobjects.SAbstractObject;
 import som.vmobjects.SClass;
 import som.vmobjects.SInvokable;
 import som.vmobjects.SObject.SImmutableObject;
@@ -104,7 +106,8 @@ public abstract class ChannelPrimitives {
       return ActivityType.PROCESS;
     }
 
-    protected void beforeExec(final SInvokable disp) {}
+    protected void beforeExec(final SInvokable disp) {
+    }
 
     @Override
     public void run() {
@@ -269,7 +272,10 @@ public abstract class ChannelPrimitives {
     @Specialization
     public final Object write(final VirtualFrame frame, final SChannelOutput out,
         final Object val) {
-      if (!isVal.executeBoolean(frame, val)) {
+      boolean noCopyNeeded = val instanceof SAbstractObject
+          && Capability.ISOLATE.supports(((SAbstractObject) val).capability);
+
+      if (!isVal.executeBoolean(frame, val) && !noCopyNeeded) {
         notAValue.signal(val);
       }
       try {

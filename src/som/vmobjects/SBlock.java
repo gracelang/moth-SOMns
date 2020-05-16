@@ -52,6 +52,7 @@ public final class SBlock extends SAbstractObject implements SObjectWithContext 
   public SBlock(final SInvokable blockMethod, final MaterializedFrame context) {
     this.method = blockMethod;
     this.context = context;
+    this.capability = Capability.UNSAFE;
   }
 
   public SInvokable getMethod() {

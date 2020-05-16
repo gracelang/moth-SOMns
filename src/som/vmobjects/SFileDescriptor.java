@@ -42,7 +42,7 @@ public class SFileDescriptor extends SObjectWithClass {
 
   @TruffleBoundary
   public SFileDescriptor(final String uri) {
-    super(fileDescriptorClass, fileDescriptorClass.getInstanceFactory());
+    super(fileDescriptorClass, Capability.IMMUTABLE, fileDescriptorClass.getInstanceFactory());
     f = new File(uri);
   }
 

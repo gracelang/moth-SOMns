@@ -15,17 +15,21 @@ public abstract class SObjectWithClass extends SAbstractObject implements SObjec
   @CompilationFinal protected ClassFactory classGroup; // the factory by which clazz was
                                                        // created
 
-  public SObjectWithClass(final SClass clazz, final ClassFactory classGroup) {
+  public SObjectWithClass(final SClass clazz, final Capability capability,
+      final ClassFactory classGroup) {
     this.clazz = clazz;
     this.classGroup = classGroup;
+    this.capability = capability;
     assert clazz.getInstanceFactory() == classGroup;
   }
 
-  public SObjectWithClass() {}
+  public SObjectWithClass() {
+  }
 
   /** Copy Constructor. */
   protected SObjectWithClass(final SObjectWithClass old) {
     this.clazz = old.clazz;
+    this.capability = old.capability;
     this.classGroup = old.classGroup;
   }
 
@@ -59,12 +63,14 @@ public abstract class SObjectWithClass extends SAbstractObject implements SObjec
   }
 
   public static final class SObjectWithoutFields extends SObjectWithClass {
-    public SObjectWithoutFields(final SClass clazz, final ClassFactory factory) {
-      super(clazz, factory);
+    public SObjectWithoutFields(final SClass clazz, final Capability capability,
+        final ClassFactory factory) {
+      super(clazz, capability, factory);
     }
 
     public SObjectWithoutFields() {
       super();
+      this.capability = Capability.IMMUTABLE;
     }
 
     public SObjectWithoutFields(final SObjectWithoutFields old) {

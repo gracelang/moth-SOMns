@@ -39,6 +39,7 @@ public final class SSymbol extends SAbstractObject {
   private static AtomicInteger idGenerator = new AtomicInteger(0);
 
   public SSymbol(final String value) {
+    this.capability = Capability.IMMUTABLE;
     string = value;
     numberOfSignatureArguments = determineNumberOfSignatureArguments();
     if (VmSettings.KOMPOS_TRACING || VmSettings.ACTOR_TRACING

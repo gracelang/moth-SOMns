@@ -52,7 +52,9 @@ import som.compiler.Variable.Argument;
 import som.interpreter.SNodeFactory;
 import som.interpreter.SomLanguage;
 import som.interpreter.nodes.ExpressionNode;
+import som.interpreter.nodes.LocalVariableNode.LocalVariableReadNode;
 import som.interpreter.nodes.MessageSendNode.AbstractMessageSendNode;
+import som.interpreter.nodes.NonLocalVariableNode.NonLocalVariableReadNode;
 import som.interpreter.nodes.ResolvingImplicitReceiverSend;
 import som.interpreter.nodes.TypeCheckNode;
 import som.interpreter.nodes.literals.ArrayLiteralNode;
@@ -93,6 +95,8 @@ public class AstBuilder {
   public final Objects  objectBuilder;
   public final Requests requestBuilder;
   public final Literals literalBuilder;
+
+  public MixinBuilder currentMixin;
 
   public AstBuilder(final JsonTreeTranslator translator, final ScopeManager scopeManager,
       final SourceManager sourceManager, final SomLanguage language,
@@ -183,6 +187,7 @@ public class AstBuilder {
       SSymbol moduleName = symbolFor(sourceManager.getModuleName());
       MixinBuilder moduleBuilder =
           scopeManager.newModule(moduleName, sourceSection);
+      currentMixin = moduleBuilder;
 
       // Set up the method used to create instances
       MethodBuilder instanceFactory = moduleBuilder.getPrimaryFactoryMethodBuilder();
@@ -293,6 +298,7 @@ public class AstBuilder {
       // Munge the name of the class
       SSymbol clazzName = symbolFor(name.getString() + "[Class]");
       MixinBuilder builder = scopeManager.newClazz(clazzName, sourceSection);
+      currentMixin = builder;
 
       // Set up the method used to create instances
       String instanceFactoryName = Symbols.NEW.getString();
@@ -457,6 +463,7 @@ public class AstBuilder {
       // Munge the name of the class
       SSymbol clazzName = symbolFor(objectName.getString() + "[Class]");
       MixinBuilder builder = scopeManager.newObject(clazzName, sourceSection);
+      currentMixin = builder;
 
       // Create the initialization method
       MethodBuilder instanceFactory = builder.getPrimaryFactoryMethodBuilder();
@@ -868,6 +875,10 @@ public class AstBuilder {
         return TypeCheckNode.create(receiver, arguments.get(1), sourceSection);
       }
 
+      // Transform Grace range syntax to adhere to Newspeak's
+      if (selector.getString().equals("..")) {
+        selectorAfterChecks = symbolFor("to:");
+      }
       // Use the Newspeak's `value` methods directly when the selector is Grace's `apply`
       if (selector.getString().contains("apply::")) {
 
@@ -908,6 +919,32 @@ public class AstBuilder {
         final List<ExpressionNode> arguments, final SourceSection sourceSection) {
       if (arguments.size() == 0) {
         return implicit(selector, sourceSection);
+      } else if (selector.getString().equals("consume:")) {
+        ExpressionNode arg = arguments.get(0);
+        if (arg instanceof NonLocalVariableReadNode) {
+          MethodBuilder method = scopeManager.peekMethod();
+          SSymbol name = ((NonLocalVariableReadNode) arg).var.name;
+          if (!method.hasArgument(name)) {
+            ExpressionNode node =
+                assignment(name, literalBuilder.done(sourceSection), sourceSection);
+            return node;
+          }
+        } else if (arg instanceof LocalVariableReadNode) {
+          MethodBuilder method = scopeManager.peekMethod();
+          SSymbol name = ((LocalVariableReadNode) arg).var.name;
+          if (!method.hasArgument(name)) {
+            ExpressionNode node =
+                assignment(name, literalBuilder.done(sourceSection), sourceSection);
+            return node;
+          }
+        } else if (arg instanceof AbstractMessageSendNode) {
+          AbstractMessageSendNode amsn = (AbstractMessageSendNode) arg;
+          SSymbol name = amsn.getInvocationIdentifier();
+          ExpressionNode node =
+              assignment(name, literalBuilder.done(sourceSection), sourceSection);
+          return node;
+        }
+        return arg;
       } else {
         MethodBuilder method = scopeManager.peekMethod();
         arguments.add(0, method.getSelfRead(sourceSection));
@@ -1038,6 +1075,13 @@ public class AstBuilder {
      */
     public DoubleLiteralNode number(final double value, final SourceSection sourceSection) {
       return new DoubleLiteralNode(value).initialize(sourceSection);
+    }
+
+    /**
+     * Creates a SOM number literal from the given string.
+     */
+    public IntegerLiteralNode number(final long value, final SourceSection sourceSection) {
+      return new IntegerLiteralNode(value).initialize(sourceSection);
     }
 
     /**

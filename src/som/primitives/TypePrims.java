@@ -7,14 +7,17 @@ import com.oracle.truffle.api.dsl.Specialization;
 
 import bd.primitives.Primitive;
 import som.interpreter.Types;
+import som.interpreter.actors.CopyObjects;
 import som.interpreter.nodes.ExceptionSignalingNode;
 import som.interpreter.nodes.nary.BinaryExpressionNode;
 import som.interpreter.nodes.nary.UnaryExpressionNode;
 import som.vm.Symbols;
 import som.vm.constants.Nil;
+import som.vmobjects.Capability;
 import som.vmobjects.SArray;
 import som.vmobjects.SBlock;
 import som.vmobjects.SClass;
+import som.vmobjects.SObject;
 import som.vmobjects.SObjectWithClass;
 import som.vmobjects.SObjectWithClass.SObjectWithoutFields;
 import som.vmobjects.SType;
@@ -66,6 +69,19 @@ public final class TypePrims {
   }
 
   /**
+   * VM Hook to create the type representing a capability.
+   */
+  @GenerateNodeFactory
+  @Primitive(primitive = "typeCapability:")
+  public abstract static class CreateTypeCapabilityPrim extends UnaryExpressionNode {
+
+    @Specialization
+    public Object createBrand(final String o) {
+      return new SType.CapabilityType(Capability.valueOf(o));
+    }
+  }
+
+  /**
    * VM Hook for the brand type to record the object as being branded.
    */
   @GenerateNodeFactory
@@ -90,6 +106,26 @@ public final class TypePrims {
     @Specialization
     public final Object doTypeVariant(final SType left, final SType right) {
       return new SType.VariantType(left, right);
+    }
+
+  }
+
+  /**
+   * Copy types based on capability type
+   */
+  @GenerateNodeFactory
+  @Primitive(selector = "copy:", receiverType = SType.class)
+  public abstract static class CopyPrim extends BinaryExpressionNode {
+
+    @Specialization
+    public final Object setClass(final SType s, final SObject value) {
+      return CopyObjects.transfer(value, Capability.valueOf(s.toString()), null);
+    }
+
+    @Specialization
+    public final SObjectWithoutFields setClass(final SType s,
+        final SObjectWithoutFields value) {
+      return CopyObjects.transfer(value, Capability.valueOf(s.toString()), null);
     }
 
   }

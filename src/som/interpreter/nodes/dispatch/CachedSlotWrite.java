@@ -14,6 +14,9 @@ import som.interpreter.nodes.dispatch.DispatchGuard.CheckSObject;
 import som.interpreter.objectstorage.ObjectTransitionSafepoint;
 import som.interpreter.objectstorage.StorageAccessor.AbstractObjectAccessor;
 import som.interpreter.objectstorage.StorageAccessor.AbstractPrimitiveAccessor;
+import som.vm.constants.Nil;
+import som.vmobjects.Capability;
+import som.vmobjects.SAbstractObject;
 import som.vmobjects.SObject;
 import som.vmobjects.SObject.SMutableObject;
 import tools.dym.Tags.FieldWrite;
@@ -45,14 +48,14 @@ public abstract class CachedSlotWrite extends AbstractDispatchNode {
     this.guardForRcvr = null;
   }
 
-  public abstract void doWrite(SObject obj, Object value);
+  public abstract Object doWrite(SObject obj, Object value);
 
   @Override
   public Object executeDispatch(final VirtualFrame frame, final Object[] arguments) {
     try {
       if (guardForRcvr.entryMatches(arguments[0], null)) {
-        doWrite((SMutableObject) arguments[0], arguments[1]);
-        return arguments[1];
+        return doWrite((SMutableObject) arguments[0], arguments[1]);
+        // return arguments[1];
       } else {
         return nextInCache.executeDispatch(frame, arguments);
       }
@@ -91,9 +94,40 @@ public abstract class CachedSlotWrite extends AbstractDispatchNode {
     }
 
     @Override
-    public void doWrite(final SObject obj, final Object value) {
+    public Object doWrite(final SObject obj, final Object value) {
       TruffleCompiler.transferToInterpreterAndInvalidate("unstabelized write node");
+      String error = null;
+      Capability vc = null;
+      if (value instanceof SAbstractObject) {
+        vc = ((SAbstractObject) value).capability;
+        if (((SAbstractObject) value).capability.equals(Capability.ALIASED_ISOLATE)) {
+          error = "Attempted to store an Isolate that is still aliased";
+        } else if (vc.equals(Capability.ISOLATE)) {
+          ((SAbstractObject) value).capability = Capability.ALIASED_ISOLATE;
+        }
+      }
+      if (error == null && vc != null && !obj.capability.supports(vc)) {
+        error = obj.capability + " doesn't support field values of " + vc;
+      }
+
+      if (error != null) {
+        // Get the human-readable version of the source location
+        int line = sourceSection.getStartLine();
+        int column = sourceSection.getStartColumn();
+        String[] parts = sourceSection.getSource().getURI().getPath().split("/");
+        String suffix = parts[parts.length - 1] + " [" + line + "," + column + "] ";
+
+        throw new RuntimeException(suffix + error);
+        // ExceptionsPrims
+        // Throw the exception
+        // ExceptionSignalingNode.createNode(
+        // Symbols.symbolFor("TypeError"), sourceSection).signal(
+        // suffix + error);
+      }
+
       ObjectTransitionSafepoint.INSTANCE.writeUninitializedSlot(obj, slot, value);
+
+      return Nil.nilObject;
     }
   }
 
@@ -108,8 +142,49 @@ public abstract class CachedSlotWrite extends AbstractDispatchNode {
     }
 
     @Override
-    public void doWrite(final SObject obj, final Object value) {
+    public Object doWrite(final SObject obj, final Object value) {
+      Object old = accessor.read(obj);
+
+      String error = null;
+      Capability vc = null;
+      if (value instanceof SAbstractObject) {
+        vc = ((SAbstractObject) value).capability;
+        if (vc.equals(Capability.ALIASED_ISOLATE)) {
+          error = "Attempted to store an Isolate that is still aliased";
+        } else if (vc.equals(Capability.ISOLATE)) {
+          ((SAbstractObject) value).capability = Capability.ALIASED_ISOLATE;
+        }
+      }
+      if (old instanceof SAbstractObject) {
+        if (Capability.ALIASED_ISOLATE.equals(((SAbstractObject) old).capability)) {
+          ((SAbstractObject) old).capability = Capability.ISOLATE;
+        }
+      }
+
+      if (error == null && vc != null && !obj.capability.supports(vc)) {
+        error = obj.capability + " doesn't support field values of " + vc;
+      }
+
+      if (error == null && obj.capability == Capability.IMMUTABLE) {
+        error = obj.capability + " doesn't support field writes as it is marked as Immutable";
+      }
+
+      if (error != null) {
+        // Get the human-readable version of the source location
+        int line = sourceSection.getStartLine();
+        int column = sourceSection.getStartColumn();
+        String[] parts = sourceSection.getSource().getURI().getPath().split("/");
+        String suffix = parts[parts.length - 1] + " [" + line + "," + column + "] ";
+
+        throw new RuntimeException(suffix + error);
+        // Throw the exception
+        // ExceptionSignalingNode.createNode(
+        // Symbols.symbolFor("TypeError"), sourceSection).signal(
+        // suffix + error);
+      }
+
       accessor.write(obj, value);
+      return old;
     }
   }
 
@@ -137,7 +212,8 @@ public abstract class CachedSlotWrite extends AbstractDispatchNode {
     }
 
     @Override
-    public void doWrite(final SObject obj, final Object value) {
+    public Object doWrite(final SObject obj, final Object value) {
+      long old = accessor.readLong(obj);
       if (value instanceof Long) {
         accessor.write(obj, (long) value);
         accessor.markPrimAsSet(obj, primMarkProfile);
@@ -145,6 +221,7 @@ public abstract class CachedSlotWrite extends AbstractDispatchNode {
         TruffleCompiler.transferToInterpreterAndInvalidate("unstabelized write node");
         ObjectTransitionSafepoint.INSTANCE.writeAndGeneralizeSlot(obj, slot, value);
       }
+      return old;
     }
   }
 
@@ -157,7 +234,8 @@ public abstract class CachedSlotWrite extends AbstractDispatchNode {
     }
 
     @Override
-    public void doWrite(final SObject obj, final Object value) {
+    public Object doWrite(final SObject obj, final Object value) {
+      long old = accessor.readLong(obj);
       if (value instanceof Long) {
         accessor.write(obj, (long) value);
         if (!accessor.isPrimitiveSet(obj, primMarkProfile)) {
@@ -172,6 +250,7 @@ public abstract class CachedSlotWrite extends AbstractDispatchNode {
         TruffleCompiler.transferToInterpreterAndInvalidate("unstabelized write node");
         ObjectTransitionSafepoint.INSTANCE.writeAndGeneralizeSlot(obj, slot, value);
       }
+      return old;
     }
   }
 
@@ -184,7 +263,8 @@ public abstract class CachedSlotWrite extends AbstractDispatchNode {
     }
 
     @Override
-    public void doWrite(final SObject obj, final Object value) {
+    public Object doWrite(final SObject obj, final Object value) {
+      double old = accessor.readDouble(obj);
       if (value instanceof Double) {
         accessor.write(obj, (double) value);
         accessor.markPrimAsSet(obj, primMarkProfile);
@@ -192,6 +272,7 @@ public abstract class CachedSlotWrite extends AbstractDispatchNode {
         TruffleCompiler.transferToInterpreterAndInvalidate("unstabelized write node");
         ObjectTransitionSafepoint.INSTANCE.writeAndGeneralizeSlot(obj, slot, value);
       }
+      return old;
     }
   }
 
@@ -204,7 +285,8 @@ public abstract class CachedSlotWrite extends AbstractDispatchNode {
     }
 
     @Override
-    public void doWrite(final SObject obj, final Object value) {
+    public Object doWrite(final SObject obj, final Object value) {
+      double old = accessor.readDouble(obj);
       if (value instanceof Double) {
         accessor.write(obj, (double) value);
         if (!accessor.isPrimitiveSet(obj, primMarkProfile)) {
@@ -219,6 +301,7 @@ public abstract class CachedSlotWrite extends AbstractDispatchNode {
         TruffleCompiler.transferToInterpreterAndInvalidate("unstabelized write node");
         ObjectTransitionSafepoint.INSTANCE.writeAndGeneralizeSlot(obj, slot, value);
       }
+      return old;
     }
   }
 }

@@ -49,6 +49,7 @@ import som.interpreter.nodes.ExpressionNode;
 import som.interpreter.nodes.LocalVariableNode;
 import som.interpreter.nodes.MessageSendNode.AbstractMessageSendNode;
 import som.vm.VmSettings;
+import som.vmobjects.Capability;
 import som.vmobjects.SInvokable;
 import som.vmobjects.SSymbol;
 
@@ -280,6 +281,9 @@ public class JsonTreeTranslator {
 
     } else if (name.equals("prefix-") || name.equals("-")) {
       return symbolFor("negated");
+
+    } else if (name.equals("prefix<-") || name.equals("<-")) {
+      return symbolFor("read");
 
     } else {
       error("The translator doesn't understand what to do with the `" + name
@@ -659,6 +663,7 @@ public class JsonTreeTranslator {
    * node. This method should be used by the {@link AstBuilder} in a recursive-descent style.
    */
   public ExpressionNode translate(final JsonObject node) {
+    // TODO: Replace this if-else with a string switch
     if (node == null) {
       return null; // TODO: Should this case exist?
       // Ignore comments, no expression
@@ -804,8 +809,14 @@ public class JsonTreeTranslator {
       SSymbol[] signatures = parseInterfaceSignatures(node);
       return astBuilder.literalBuilder.type(signatures, source(node));
     } else if (nodeType(node).equals("number")) {
-      double value = Double.parseDouble(node.get("digits").getAsString());
-      return astBuilder.literalBuilder.number(value, source(node));
+      String num = node.get("digits").getAsString();
+      if (num.contains(".")) {
+        double value = Double.parseDouble(num);
+        return astBuilder.literalBuilder.number(value, source(node));
+      } else {
+        long value = Long.parseLong(num);
+        return astBuilder.literalBuilder.number(value, source(node));
+      }
     } else if (nodeType(node).equals("string-literal")) {
       return astBuilder.literalBuilder.string(node.get("raw").getAsString(), source(node));
 
@@ -814,6 +825,12 @@ public class JsonTreeTranslator {
 
     } else if (nodeType(node).equals("implicit-bracket-request")) {
       return astBuilder.literalBuilder.array(arguments(node), source(node));
+
+    } else if (nodeType(node).equals("uses")) {
+      // FIXME: Errors if use isn't actually a capability
+      String name = node.get("from").getAsJsonObject().get("name").getAsString();
+      astBuilder.currentMixin.capability = Capability.valueOf(name.toUpperCase());
+      return null;
 
     } else {
       error("The translator doesn't understand what to do with a " + nodeType(node) + " node?",

@@ -75,7 +75,7 @@ public abstract class NewObjectPrim extends UnaryExpressionNode implements ISpec
       final SClass receiver,
       @Cached("receiver.getInstanceFactory()") final ClassFactory factory,
       @Cached("factory.getInstanceLayout()") final ObjectLayout layout) {
-    return new SMutableObject(receiver, factory, layout);
+    return new SMutableObject(receiver, receiver.initialInstanceCapability, factory, layout);
   }
 
   @Specialization(guards = {
@@ -84,7 +84,7 @@ public abstract class NewObjectPrim extends UnaryExpressionNode implements ISpec
       limit = "INLINE_CACHE_SIZE")
   public final SAbstractObject doClassWithoutFields(final SClass receiver,
       @Cached("receiver.getInstanceFactory()") final ClassFactory factory) {
-    return new SObjectWithoutFields(receiver, factory);
+    return new SObjectWithoutFields(receiver, receiver.initialInstanceCapability, factory);
   }
 
   @Specialization(replaces = {"doClassWithOnlyImmutableFields", "doClassWithFields",

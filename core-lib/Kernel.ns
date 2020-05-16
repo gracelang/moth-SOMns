@@ -33,6 +33,7 @@ class Kernel vmMirror: vmMirror = Object <: Value (
       (* vmMirror printStackTrace: nil.
          error: 'Method ' + selector + ' not found in class ' + (vmMirror mirrorClassName: self).
       *)
+      vmMirror printStackTrace: nil.
       MessageNotUnderstood signalWith: self selector: selector arguments: arguments.
     )
 
@@ -76,6 +77,7 @@ class Kernel vmMirror: vmMirror = Object <: Value (
   public class Type = Value ()
   (
     public checkOrError: aObj = ( vmMirror type: self checkOrError: aObj )
+    public not = ( self )
   )
 
   public class Object = Thing ()

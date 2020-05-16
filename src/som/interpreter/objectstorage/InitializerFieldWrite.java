@@ -10,6 +10,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.profiles.IntValueProfile;
 
 import som.compiler.MixinDefinition.SlotDefinition;
+import som.interpreter.nodes.ExceptionSignalingNode;
 import som.interpreter.nodes.ExpressionNode;
 import som.interpreter.nodes.nary.ExprWithTagsNode;
 import som.interpreter.objectstorage.StorageAccessor.AbstractObjectAccessor;
@@ -18,6 +19,9 @@ import som.interpreter.objectstorage.StorageLocation.DoubleStorageLocation;
 import som.interpreter.objectstorage.StorageLocation.LongStorageLocation;
 import som.interpreter.objectstorage.StorageLocation.ObjectStorageLocation;
 import som.interpreter.objectstorage.StorageLocation.UnwrittenStorageLocation;
+import som.vm.Symbols;
+import som.vmobjects.Capability;
+import som.vmobjects.SAbstractObject;
 import som.vmobjects.SObject;
 import som.vmobjects.SObject.SImmutableObject;
 import som.vmobjects.SObject.SMutableObject;
@@ -223,6 +227,29 @@ public abstract class InitializerFieldWrite extends ExprWithTagsNode {
       @Cached("rcvr.getObjectLayout()") final ObjectLayout cachedLayout,
       @Cached("cachedLayout.getAssumption()") final Assumption isLatestLayout,
       @Cached("getObjectAccessor(cachedLayout)") final AbstractObjectAccessor accessor) {
+
+    String error = null;
+    if (value instanceof SAbstractObject) {
+      if (((SAbstractObject) value).capability.equals(Capability.ALIASED_ISOLATE)) {
+        error = "Attempted to store an Isolate that is still aliased";
+      } else if (((SAbstractObject) value).capability.equals(Capability.ISOLATE)) {
+        ((SAbstractObject) value).capability = Capability.ALIASED_ISOLATE;
+      }
+    }
+    if (error != null) {
+      // Get the human-readable version of the source location
+      int line = sourceSection.getStartLine();
+      int column = sourceSection.getStartColumn();
+      String[] parts = sourceSection.getSource().getURI().getPath().split("/");
+      String suffix = parts[parts.length - 1] + " [" + line + "," + column + "] ";
+
+      // Throw the exception
+      ExceptionSignalingNode exNode =
+          ExceptionSignalingNode.createNode(Symbols.symbolFor("TypeError"), sourceSection);
+      insert(exNode);
+      exNode.signal(suffix + error);
+    }
+
     accessor.write(rcvr, value);
     return value;
   }
@@ -236,6 +263,28 @@ public abstract class InitializerFieldWrite extends ExprWithTagsNode {
       @Cached("rcvr.getObjectLayout()") final ObjectLayout cachedLayout,
       @Cached("cachedLayout.getAssumption()") final Assumption isLatestLayout,
       @Cached("getObjectAccessor(cachedLayout)") final AbstractObjectAccessor accessor) {
+    String error = null;
+    if (value instanceof SAbstractObject) {
+      if (((SAbstractObject) value).capability.equals(Capability.ALIASED_ISOLATE)) {
+        error = "Attempted to store an Isolate that is still aliased";
+      } else if (((SAbstractObject) value).capability.equals(Capability.ISOLATE)) {
+        ((SAbstractObject) value).capability = Capability.ALIASED_ISOLATE;
+      }
+    }
+    if (error != null) {
+      // Get the human-readable version of the source location
+      int line = sourceSection.getStartLine();
+      int column = sourceSection.getStartColumn();
+      String[] parts = sourceSection.getSource().getURI().getPath().split("/");
+      String suffix = parts[parts.length - 1] + " [" + line + "," + column + "] ";
+
+      // Throw the exception
+      ExceptionSignalingNode exNode =
+          ExceptionSignalingNode.createNode(Symbols.symbolFor("TypeError"), sourceSection);
+      insert(exNode);
+      exNode.signal(suffix + error);
+    }
+
     accessor.write(rcvr, value);
     return value;
   }
@@ -250,6 +299,28 @@ public abstract class InitializerFieldWrite extends ExprWithTagsNode {
       @Cached("cachedLayout.getAssumption()") final Assumption isLatestLayout,
       @Cached("getUnwritten(cachedLayout)") final StorageLocation location) {
     CompilerDirectives.transferToInterpreter();
+    String error = null;
+    if (value instanceof SAbstractObject) {
+      if (((SAbstractObject) value).capability.equals(Capability.ALIASED_ISOLATE)) {
+        error = "Attempted to store an Isolate that is still aliased";
+      } else if (((SAbstractObject) value).capability.equals(Capability.ISOLATE)) {
+        ((SAbstractObject) value).capability = Capability.ALIASED_ISOLATE;
+      }
+    }
+    if (error != null) {
+      // Get the human-readable version of the source location
+      int line = sourceSection.getStartLine();
+      int column = sourceSection.getStartColumn();
+      String[] parts = sourceSection.getSource().getURI().getPath().split("/");
+      String suffix = parts[parts.length - 1] + " [" + line + "," + column + "] ";
+
+      // Throw the exception
+      ExceptionSignalingNode exNode =
+          ExceptionSignalingNode.createNode(Symbols.symbolFor("TypeError"), sourceSection);
+      insert(exNode);
+      exNode.signal(suffix + error);
+    }
+
     ObjectTransitionSafepoint.INSTANCE.writeUninitializedSlot(rcvr, slot, value);
     return value;
   }
@@ -260,6 +331,28 @@ public abstract class InitializerFieldWrite extends ExprWithTagsNode {
   public final Object updateObject(final SObject rcvr, final Object value) {
     // no invalidation, just moving to interpreter to avoid recursion in PE
     CompilerDirectives.transferToInterpreter();
+    String error = null;
+    if (value instanceof SAbstractObject) {
+      if (((SAbstractObject) value).capability.equals(Capability.ALIASED_ISOLATE)) {
+        error = "Attempted to store an Isolate that is still aliased";
+      } else if (((SAbstractObject) value).capability.equals(Capability.ISOLATE)) {
+        ((SAbstractObject) value).capability = Capability.ALIASED_ISOLATE;
+      }
+    }
+    if (error != null) {
+      // Get the human-readable version of the source location
+      int line = sourceSection.getStartLine();
+      int column = sourceSection.getStartColumn();
+      String[] parts = sourceSection.getSource().getURI().getPath().split("/");
+      String suffix = parts[parts.length - 1] + " [" + line + "," + column + "] ";
+
+      // Throw the exception
+      ExceptionSignalingNode exNode =
+          ExceptionSignalingNode.createNode(Symbols.symbolFor("TypeError"), sourceSection);
+      insert(exNode);
+      exNode.signal(suffix + error);
+    }
+
     ObjectTransitionSafepoint.INSTANCE.transitionObject(rcvr);
     return executeEvaluated(rcvr, value);
   }
@@ -272,6 +365,28 @@ public abstract class InitializerFieldWrite extends ExprWithTagsNode {
   @Specialization(guards = {"isNonObjectLocation(rcvr)"})
   public final Object generalizeStorageLocation(final SObject rcvr, final Object value) {
     CompilerDirectives.transferToInterpreter();
+    String error = null;
+    if (value instanceof SAbstractObject) {
+      if (((SAbstractObject) value).capability.equals(Capability.ALIASED_ISOLATE)) {
+        error = "Attempted to store an Isolate that is still aliased";
+      } else if (((SAbstractObject) value).capability.equals(Capability.ISOLATE)) {
+        ((SAbstractObject) value).capability = Capability.ALIASED_ISOLATE;
+      }
+    }
+    if (error != null) {
+      // Get the human-readable version of the source location
+      int line = sourceSection.getStartLine();
+      int column = sourceSection.getStartColumn();
+      String[] parts = sourceSection.getSource().getURI().getPath().split("/");
+      String suffix = parts[parts.length - 1] + " [" + line + "," + column + "] ";
+
+      // Throw the exception
+      ExceptionSignalingNode exNode =
+          ExceptionSignalingNode.createNode(Symbols.symbolFor("TypeError"), sourceSection);
+      insert(exNode);
+      exNode.signal(suffix + error);
+    }
+
     rcvr.writeSlot(slot, value);
     return value;
   }

@@ -13,7 +13,10 @@ import bd.inlining.ScopeAdaptationVisitor;
 import bd.tools.nodes.Invocation;
 import som.compiler.Variable.Local;
 import som.interpreter.nodes.nary.ExprWithTagsNode;
+import som.vm.Symbols;
 import som.vm.constants.Nil;
+import som.vmobjects.Capability;
+import som.vmobjects.SAbstractObject;
 import som.vmobjects.SSymbol;
 import tools.debugger.Tags.LocalVariableTag;
 import tools.dym.Tags.LocalVarRead;
@@ -25,7 +28,7 @@ public abstract class LocalVariableNode extends ExprWithTagsNode
 
   protected final FrameSlot       slot;
   protected final FrameDescriptor descriptor;
-  protected final Local           var;
+  public final Local              var;
 
   // TODO: We currently assume that there is a 1:1 mapping between lexical contexts
   // and frame descriptors, which is apparently not strictly true anymore in Truffle 1.0.0.
@@ -170,8 +173,41 @@ public abstract class LocalVariableNode extends ExprWithTagsNode
     @Specialization(replaces = {"writeBoolean", "writeLong", "writeDouble"})
     public final Object writeGeneric(final VirtualFrame frame, final Object expValue) {
       slot.setKind(FrameSlotKind.Object);
+      Object old = null;
+      try {
+        old = frame.getObject(slot);
+      } catch (FrameSlotTypeException e) {
+        e.printStackTrace();
+      }
+      String error = null;
+      if (expValue instanceof SAbstractObject) {
+        if (((SAbstractObject) expValue).capability.equals(Capability.ALIASED_ISOLATE)) {
+          error = "Attempted to store an Isolate that is still aliased";
+        } else if (((SAbstractObject) expValue).capability.equals(Capability.ISOLATE)) {
+          ((SAbstractObject) expValue).capability = Capability.ALIASED_ISOLATE;
+        }
+      }
+      if (old instanceof SAbstractObject) {
+        if (((SAbstractObject) old).capability.equals(Capability.ALIASED_ISOLATE)) {
+          ((SAbstractObject) old).capability = Capability.ISOLATE;
+        }
+      }
+
+      if (error != null) {
+        // Get the human-readable version of the source location
+        int line = sourceSection.getStartLine();
+        int column = sourceSection.getStartColumn();
+        String[] parts = sourceSection.getSource().getURI().getPath().split("/");
+        String suffix = parts[parts.length - 1] + " [" + line + "," + column + "] ";
+
+        // Throw the exception
+        ExceptionSignalingNode exNode =
+            ExceptionSignalingNode.createNode(Symbols.symbolFor("TypeError"), sourceSection);
+        insert(exNode);
+        exNode.signal(suffix + error);
+      }
       frame.setObject(slot, expValue);
-      return expValue;
+      return old;
     }
 
     // uses expValue to make sure guard is not converted to assertion

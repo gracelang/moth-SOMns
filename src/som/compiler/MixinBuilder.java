@@ -54,6 +54,7 @@ import som.interpreter.objectstorage.InitializerFieldWrite;
 import som.primitives.NewObjectPrimNodeGen;
 import som.vm.Symbols;
 import som.vm.VmSettings;
+import som.vmobjects.Capability;
 import som.vmobjects.SInvokable;
 import som.vmobjects.SSymbol;
 
@@ -113,6 +114,8 @@ public final class MixinBuilder extends ScopeBuilder<MixinScope> {
   private final StructuralProbe<SSymbol, MixinDefinition, SInvokable, SlotDefinition, Variable> structuralProbe;
 
   private final SomLanguage language;
+
+  public Capability capability = Capability.UNSAFE;
 
   /**
    * A unique id to identify the mixin definition. Having the Id distinct from
@@ -509,6 +512,8 @@ public final class MixinBuilder extends ScopeBuilder<MixinScope> {
         isModule() || outer.isImmutable(), isModule(), source);
     scope.setMixinDefinition(clsDef, false);
     classScope.setMixinDefinition(clsDef, true);
+
+    clsDef.capability = capability;
 
     setHolders(clsDef);
 

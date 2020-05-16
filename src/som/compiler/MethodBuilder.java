@@ -649,7 +649,7 @@ public final class MethodBuilder extends ScopeBuilder<MethodScope>
   }
 
   @Override
-  protected boolean hasArgument(final SSymbol varName) {
+  public boolean hasArgument(final SSymbol varName) {
     if (arguments.containsKey(varName)) {
       return true;
     }

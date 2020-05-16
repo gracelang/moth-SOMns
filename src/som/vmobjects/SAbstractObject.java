@@ -16,6 +16,8 @@ public abstract class SAbstractObject implements SomInteropObject {
 
   public abstract boolean isValue();
 
+  public Capability capability;
+
   @Override
   public String toString() {
     CompilerAsserts.neverPartOfCompilation();
