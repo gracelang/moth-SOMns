@@ -34,7 +34,7 @@ class ioImm(in, out) {
 }
 class ioIso(in, out) {
   method read { iso.cast(in.read) }
-  method <- (value) { out.write(iso.cast(value)) }
+  method <- (value) { out.write(consume(iso.cast(value))) }
 }
 class ioLocal(in, out) {
   method read { local.cast(in.read) }

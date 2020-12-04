@@ -5,6 +5,7 @@ import com.oracle.truffle.api.instrumentation.GenerateWrapper;
 import com.oracle.truffle.api.instrumentation.ProbeNode;
 import com.oracle.truffle.api.instrumentation.Tag;
 import com.oracle.truffle.api.profiles.ValueProfile;
+import com.oracle.truffle.api.source.SourceSection;
 
 import bd.inlining.ScopeAdaptationVisitor;
 import bd.tools.nodes.Invocation;
@@ -13,6 +14,10 @@ import som.compiler.Variable.AccessNodeState;
 import som.compiler.Variable.Argument;
 import som.interpreter.SArguments;
 import som.interpreter.nodes.nary.ExprWithTagsNode;
+import som.vm.Symbols;
+import som.vm.constants.Nil;
+import som.vmobjects.Capability;
+import som.vmobjects.SAbstractObject;
 import som.vmobjects.SSymbol;
 import tools.debugger.Tags.ArgumentTag;
 import tools.debugger.Tags.KeywordTag;
@@ -81,6 +86,176 @@ public abstract class ArgumentReadNode {
     @Override
     public String toString() {
       return "LocalArg(" + argumentIndex + ")";
+    }
+
+    @Override
+    public void replaceAfterScopeChange(final ScopeAdaptationVisitor inliner) {
+      inliner.updateRead(arg, this, 0);
+    }
+  }
+
+  @GenerateWrapper
+  public static class LocalArgumentInitNode extends ExprWithTagsNode
+      implements Invocation<SSymbol> {
+    protected final int      argumentIndex;
+    protected final Argument arg;
+
+    public LocalArgumentInitNode(final Argument arg,
+        final SourceSection sourceSection) {
+      assert arg.index > 0 ||
+          this instanceof LocalArgumentInitNode;
+      this.argumentIndex = arg.index;
+      this.arg = arg;
+      this.sourceSection = sourceSection;
+    }
+
+    /** For Wrapper use only. */
+    protected LocalArgumentInitNode() {
+      this.argumentIndex = 0;
+      this.arg = null;
+    }
+
+    /** For use in primitives only. */
+    public LocalArgumentInitNode(final boolean insidePrim, final int argIdx) {
+      this.argumentIndex = argIdx;
+      this.arg = null;
+      assert insidePrim : "Only to be used for primitive nodes";
+    }
+
+    @Override
+    public WrapperNode createWrapper(final ProbeNode probe) {
+      return new LocalArgumentInitNodeWrapper(this, probe);
+    }
+
+    public Argument getArg() {
+      return arg;
+    }
+
+    @Override
+    public final SSymbol getInvocationIdentifier() {
+      return arg.name;
+    }
+
+    @Override
+    public Object executeGeneric(final VirtualFrame frame) {
+      Object[] args = frame.getArguments();
+      Object obj = args[argumentIndex];
+      String error = null;
+      if (obj instanceof SAbstractObject) {
+        if (((SAbstractObject) obj).capability.equals(Capability.ALIASED_ISOLATE)) {
+          error = "Attempted to store an Isolate that is still aliased";
+        } else if (((SAbstractObject) obj).capability.equals(Capability.ISOLATE)) {
+          ((SAbstractObject) obj).capability = Capability.ALIASED_ISOLATE;
+        }
+      }
+
+      if (error != null) {
+        // Get the human-readable version of the source location
+        int line = sourceSection.getStartLine();
+        int column = sourceSection.getStartColumn();
+        String[] parts = sourceSection.getSource().getURI().getPath().split("/");
+        String suffix = parts[parts.length - 1] + " [" + line + "," + column + "] ";
+
+        // Throw the exception
+        ExceptionSignalingNode exNode =
+            ExceptionSignalingNode.createNode(Symbols.symbolFor("TypeError"), sourceSection);
+        insert(exNode);
+        exNode.signal(suffix + error);
+      }
+      return obj;
+    }
+
+    @Override
+    public boolean hasTag(final Class<? extends Tag> tag) {
+      if (tag == ArgumentTag.class) {
+        return true;
+      } else if (tag == LocalArgRead.class) {
+        return true;
+      } else {
+        return super.hasTag(tag);
+      }
+    }
+
+    @Override
+    public String toString() {
+      return "LocalInitArg(" + argumentIndex + ")";
+    }
+
+    @Override
+    public void replaceAfterScopeChange(final ScopeAdaptationVisitor inliner) {
+      inliner.updateRead(arg, this, 0);
+    }
+  }
+
+  @GenerateWrapper
+  public static class LocalArgumentDestructiveReadNode extends ExprWithTagsNode
+      implements Invocation<SSymbol> {
+    protected final int      argumentIndex;
+    protected final Argument arg;
+
+    public LocalArgumentDestructiveReadNode(final Argument arg,
+        final SourceSection sourceSection) {
+      assert arg.index > 0 ||
+          this instanceof LocalArgumentDestructiveReadNode;
+      this.argumentIndex = arg.index;
+      this.arg = arg;
+      this.sourceSection = sourceSection;
+    }
+
+    /** For Wrapper use only. */
+    protected LocalArgumentDestructiveReadNode() {
+      this.argumentIndex = 0;
+      this.arg = null;
+    }
+
+    /** For use in primitives only. */
+    public LocalArgumentDestructiveReadNode(final boolean insidePrim, final int argIdx) {
+      this.argumentIndex = argIdx;
+      this.arg = null;
+      assert insidePrim : "Only to be used for primitive nodes";
+    }
+
+    @Override
+    public WrapperNode createWrapper(final ProbeNode probe) {
+      return new LocalArgumentDestructiveReadNodeWrapper(this, probe);
+    }
+
+    public Argument getArg() {
+      return arg;
+    }
+
+    @Override
+    public final SSymbol getInvocationIdentifier() {
+      return arg.name;
+    }
+
+    @Override
+    public Object executeGeneric(final VirtualFrame frame) {
+      Object[] args = frame.getArguments();
+      Object obj = args[argumentIndex];
+      args[argumentIndex] = Nil.nilObject;
+      if (obj instanceof SAbstractObject) {
+        if (((SAbstractObject) obj).capability.equals(Capability.ALIASED_ISOLATE)) {
+          ((SAbstractObject) obj).capability = Capability.ISOLATE;
+        }
+      }
+      return obj;
+    }
+
+    @Override
+    public boolean hasTag(final Class<? extends Tag> tag) {
+      if (tag == ArgumentTag.class) {
+        return true;
+      } else if (tag == LocalArgRead.class) {
+        return true;
+      } else {
+        return super.hasTag(tag);
+      }
+    }
+
+    @Override
+    public String toString() {
+      return "LocalDestructiveArg(" + argumentIndex + ")";
     }
 
     @Override

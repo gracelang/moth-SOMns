@@ -51,6 +51,9 @@ import som.compiler.MixinDefinition.SlotDefinition;
 import som.compiler.Variable.Argument;
 import som.interpreter.SNodeFactory;
 import som.interpreter.SomLanguage;
+import som.interpreter.nodes.ArgumentReadNode.LocalArgumentDestructiveReadNode;
+import som.interpreter.nodes.ArgumentReadNode.LocalArgumentInitNode;
+import som.interpreter.nodes.ArgumentReadNode.LocalArgumentReadNode;
 import som.interpreter.nodes.ExpressionNode;
 import som.interpreter.nodes.LocalVariableNode.LocalVariableReadNode;
 import som.interpreter.nodes.MessageSendNode.AbstractMessageSendNode;
@@ -745,6 +748,8 @@ public class AstBuilder {
                   arg.source),
               typeExpr.getSourceSection()));
         }
+        // Also alias isolated arguments
+        expressions.add(new LocalArgumentInitNode(arg, arg.source));
       }
 
       boolean returned = false;
@@ -943,6 +948,9 @@ public class AstBuilder {
           ExpressionNode node =
               assignment(name, literalBuilder.done(sourceSection), sourceSection);
           return node;
+        } else if (arg instanceof LocalArgumentReadNode) {
+          return new LocalArgumentDestructiveReadNode(((LocalArgumentReadNode) arg).getArg(),
+              sourceSection);
         }
         return arg;
       } else {
