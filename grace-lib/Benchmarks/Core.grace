@@ -24,8 +24,8 @@
 //
 
 def Array: Unknown = platform.kernel.Array
-def initialSize: Number = 10.asInteger
-def initialCapacity: Number = 16.asInteger
+def initialSize: Number = 10
+def initialCapacity: Number = 16
 
 type Pair = interface {
   key
@@ -86,8 +86,8 @@ type Dictionary = interface {
 class newPairWithKey (key: Unknown) andValue (value: Unknown) -> Pair {}
 
 class newVector (size': Number) -> Vector {
-  var firstIdx: Number := 1.asInteger
-  var lastIdx: Number := 1.asInteger
+  var firstIdx: Number := 1
+  var lastIdx: Number := 1
   var storage: List := Array.new(size')
 
   method at(index: Number) -> Unknown {
@@ -98,15 +98,15 @@ class newVector (size': Number) -> Vector {
   method at(index: Number) put (val: Unknown) -> Done {
     (index > storage.size).ifTrue {
       var newLength: Number := storage.size
-      { newLength < index }.whileTrue { newLength := newLength * 2.asInteger }
+      { newLength < index }.whileTrue { newLength := newLength * 2 }
       var newStorage: List := Array.new(newLength)
       storage.doIndexes { i: Number -> newStorage.at (i) put (storage.at(i)) }
       storage := newStorage
     }
 
     storage.at (index) put (val)
-    (lastIdx < (index + 1.asInteger)).ifTrue {
-      lastIdx := index + 1.asInteger
+    (lastIdx < (index + 1)).ifTrue {
+      lastIdx := index + 1
     }
 
     done
@@ -115,32 +115,32 @@ class newVector (size': Number) -> Vector {
   method append(element: Unknown) -> Vector {
     (lastIdx > storage.size).ifTrue {
       // Need to expand capacity first
-      var newStorage: List := Array.new(2.asInteger * storage.size)
+      var newStorage: List := Array.new(2 * storage.size)
       storage.doIndexes { i: Number -> newStorage. at (i) put (storage.at(i)) }
       storage := newStorage
     }
 
     storage.at (lastIdx) put (element)
-    lastIdx := lastIdx + 1.asInteger
+    lastIdx := lastIdx + 1
     return self
   }
 
   method isEmpty -> Boolean { return lastIdx == firstIdx }
 
   method forEach(block: Invokable) -> Done {
-    firstIdx.to (lastIdx - 1.asInteger) do { i: Number -> block.value(storage.at(i)) }
+    firstIdx.to (lastIdx - 1) do { i: Number -> block.value(storage.at(i)) }
     done
   }
 
   method hasSome(block: Invokable) -> Boolean {
-    firstIdx.to (lastIdx - 1.asInteger) do { i: Number ->
+    firstIdx.to (lastIdx - 1) do { i: Number ->
       block.value(storage.at(i)).ifTrue { return true }
     }
     return false
   }
 
   method getOne(block: Invokable) -> Unknown {
-    firstIdx.to(lastIdx - 1.asInteger) do { i: Number ->
+    firstIdx.to(lastIdx - 1) do { i: Number ->
       var e: Unknown := storage.at(i)
       block.value(e).ifTrue { return e }
     }
@@ -150,20 +150,20 @@ class newVector (size': Number) -> Vector {
   method removeFirst -> Unknown {
     isEmpty.ifTrue { return done }
 
-    firstIdx := firstIdx + 1.asInteger
-    return storage.at(firstIdx - 1.asInteger)
+    firstIdx := firstIdx + 1
+    return storage.at(firstIdx - 1)
   }
 
   method removeAll -> Done {
-    firstIdx := 1.asInteger
-    lastIdx  := 1.asInteger
+    firstIdx := 1
+    lastIdx  := 1
     storage := Array.new (storage.size)
     done
   }
 
   method remove(obj: Unknown) -> Unknown {
     var newArray: List := Array.new (capacity)
-    var newLast: Number := 1.asInteger
+    var newLast: Number := 1
     var found: Boolean := false
 
     forEach { it: Unknown ->
@@ -171,13 +171,13 @@ class newVector (size': Number) -> Vector {
         found := true
       } ifFalse {
           newArray.at (newLast) put (it)
-          newLast := newLast + 1.asInteger
+          newLast := newLast + 1
       }
     }
 
     storage := newArray
     lastIdx := newLast
-    firstIdx := 1.asInteger
+    firstIdx := 1
     return found
   }
 
@@ -190,7 +190,7 @@ class newVector (size': Number) -> Vector {
   // sortBlocks with side effects may not work right
   method sort(aBlock: Invokable) -> Done {
     (size > 0).ifTrue {
-      sort (firstIdx) to (lastIdx - 1.asInteger) with (aBlock)
+      sort (firstIdx) to (lastIdx - 1) with (aBlock)
     }
     done
   }
@@ -201,7 +201,7 @@ class newVector (size': Number) -> Vector {
     sortBlock.isNil.ifTrue { return defaultSort (i) to (j)  }
 
     // The prefix d means the data at that index.
-    var n: Number := j + 1.asInteger - i
+    var n: Number := j + 1 - i
     (n <= 1).ifTrue { return self } // Nothing to sort.
 
     // Sort di,dj.
@@ -218,9 +218,9 @@ class newVector (size': Number) -> Vector {
     }
 
     // More than two elements.
-    (n > 2.asInteger).ifTrue {
+    (n > 2).ifTrue {
       // ij is the midpoint of i and j.
-      var ij: Number := ((i + j) / 2).asInteger
+      var ij: Number := ((i + j) / 2)
       var dij: Unknown := storage.at(ij)
 
       // Sort di,dij,dj. Make dij be their median.
@@ -244,10 +244,10 @@ class newVector (size': Number) -> Vector {
         var k: Number := i
         var l: Number := j
 
-        { { l := l - 1.asInteger
+        { { l := l - 1
             (k <= l).and { sortBlock.value (dij) with (storage.at(l)) }
           }.whileTrue  // i.e. while dl succeeds dij
-          { k := k + 1.asInteger
+          { k := k + 1
             (k <= l).and { sortBlock.value (storage.at(k)) with (dij) }
             whileTrue  // i.e. while dij succeeds dk
           }
@@ -268,11 +268,11 @@ class newVector (size': Number) -> Vector {
 }
 
 method newVector -> Vector {
-  return newVector(50.asInteger)
+  return newVector(50)
 }
 
 method newVectorWith(elem: Unknown) -> Vector {
-  var v: Vector := newVector(1.asInteger)
+  var v: Vector := newVector(1)
   v.append(elem)
   return v
 }
@@ -329,7 +329,7 @@ type Entry = interface {
 
 class newDictionary(size': Number) -> Dictionary {
   var buckets: List := Array.new(size')
-  var size_: Number   := 0.asInteger
+  var size_: Number   := 0
 
   class newEntryWithHashKeyValueNext (hash': Number, key': Unknown, val': Unknown, next': Entry) -> Entry {
     def hash: Number = hash'
@@ -343,13 +343,13 @@ class newDictionary(size': Number) -> Dictionary {
   }
 
   method hash(key: Unknown) -> Number {
-    key.isNil.ifTrue { return 0.asInteger }
+    key.isNil.ifTrue { return 0 }
     var hash: Number := key.customHash
-    return hash.bitXor(hash.bitRightShift(16.asInteger))
+    return hash.bitXor(hash.bitRightShift(16))
   }
 
   method bucketIdx(hash: Number) -> Number {
-    return 1.asInteger + (buckets.size - 1.asInteger).bitAnd(hash)
+    return 1 + (buckets.size - 1).bitAnd(hash)
   }
 
   method bucket(hash: Number) -> Entry {
@@ -385,7 +385,7 @@ class newDictionary(size': Number) -> Dictionary {
 
     current.isNil.ifTrue {
       buckets.at(i) put (newEntry (aKey) value (aVal) hash (hash))
-      size_ := size_ + 1.asInteger
+      size_ := size_ + 1
     } ifFalse {
       insertBucketEntry (aKey) value (aVal) hash (hash) head (current )
     }
@@ -408,7 +408,7 @@ class newDictionary(size': Number) -> Dictionary {
       }
 
       current.next.isNil.ifTrue {
-        size_ := size_ + 1.asInteger
+        size_ := size_ + 1
         current.next := newEntry (key) value (value) hash (hash)
         return self
       }
@@ -418,19 +418,19 @@ class newDictionary(size': Number) -> Dictionary {
 
   method resize -> Done {
     var oldStorage: List := buckets
-    buckets := Array.new (oldStorage.size * 2.asInteger)
+    buckets := Array.new (oldStorage.size * 2)
     transferEntries(oldStorage)
     done
   }
 
   method transferEntries(oldStorage: List) -> Done {
-    1.asInteger.to(oldStorage.size) do { i: Number ->
+    1.to(oldStorage.size) do { i: Number ->
       var current: Entry := oldStorage.at(i)
 
       current.notNil.ifTrue {
         oldStorage.at (i) put (done)
         current.next.isNil.ifTrue {
-          buckets.at (1.asInteger + (current.hash.bitAnd(buckets.size - 1.asInteger))) put (current)
+          buckets.at (1 + (current.hash.bitAnd(buckets.size - 1))) put (current)
         } ifFalse {
           splitBucket(oldStorage) bucket (i) head (current)
         }
@@ -447,7 +447,7 @@ class newDictionary(size': Number) -> Dictionary {
     var current: Entry := head
 
     { current.notNil }. whileTrue {
-      (current.hash.bitAnd(oldStorage.size) == 0.asInteger).ifTrue {
+      (current.hash.bitAnd(oldStorage.size) == 0).ifTrue {
           loTail.isNil.ifTrue {
             loHead := current
           } ifFalse {
@@ -480,11 +480,11 @@ class newDictionary(size': Number) -> Dictionary {
 
   method size -> Number { return size_ }
 
-  method isEmpty -> Boolean { return size_ == 0.asInteger }
+  method isEmpty -> Boolean { return size_ == 0 }
 
   method removeAll -> Done {
     buckets := Array.new(buckets.size)
-    size_ := 0.asInteger
+    size_ := 0
     done
   }
 

@@ -149,29 +149,29 @@ class newHavlak -> harness.Benchmark {
 
   method innerBenchmarkLoop (innerIterations: Number) -> Boolean {
     return verifyResult (newLoopTesterApp.main ( innerIterations )
-                                          loop ( 50.asInteger    )
-                                          p    ( 10.asInteger    )
-                                          p    ( 10.asInteger    )
-                                          p    (  5.asInteger    )) iterations (innerIterations)
+                                          loop ( 50    )
+                                          p    ( 10    )
+                                          p    ( 10    )
+                                          p    (  5    )) iterations (innerIterations)
   }
 
   method verifyResult (result: List) iterations (innerIterations: Number) -> Boolean {
-    (innerIterations == 15000.asInteger).ifTrue { return (result.at(1.asInteger) == 46602.asInteger). and { result.at(2.asInteger) == 5213.asInteger } }
-    (innerIterations ==  1500.asInteger).ifTrue { return (result.at(1.asInteger) ==  6102.asInteger). and { result.at(2.asInteger) == 5213.asInteger } }
-    (innerIterations ==   150.asInteger).ifTrue { return (result.at(1.asInteger) ==  2052.asInteger). and { result.at(2.asInteger) == 5213.asInteger } }
-    (innerIterations ==    15.asInteger).ifTrue { return (result.at(1.asInteger) ==  1647.asInteger). and { result.at(2.asInteger) == 5213.asInteger } }
-    (innerIterations ==     1.asInteger).ifTrue { return (result.at(1.asInteger) ==  1605.asInteger). and { result.at(2.asInteger) == 5213.asInteger } }
+    (innerIterations == 15000).ifTrue { return (result.at(1) == 46602). and { result.at(2) == 5213 } }
+    (innerIterations ==  1500).ifTrue { return (result.at(1) ==  6102). and { result.at(2) == 5213 } }
+    (innerIterations ==   150).ifTrue { return (result.at(1) ==  2052). and { result.at(2) == 5213 } }
+    (innerIterations ==    15).ifTrue { return (result.at(1) ==  1647). and { result.at(2) == 5213 } }
+    (innerIterations ==     1).ifTrue { return (result.at(1) ==  1605). and { result.at(2) == 5213 } }
 
     print("No verification result for {innerIterations} found")
-    print("Result is {result.at(1.asInteger)}, {result.at(2.asInteger)}")
+    print("Result is {result.at(1)}, {result.at(2)}")
     return false
   }
 
 }
 
 class newBasicBlock (name': Number) -> BasicBlock {
-  def inEdges: core.Vector  = core.newVector(2.asInteger)
-  def outEdges: core.Vector = core.newVector(2.asInteger)
+  def inEdges: core.Vector  = core.newVector(2)
+  def outEdges: core.Vector = core.newVector(2)
   def name: Number = name'
 
   method numPred -> Number { return inEdges.size }
@@ -213,7 +213,7 @@ class newControlFlowGraph -> ControlFlowGraph {
       basicBlockMap. at (name) put (node)
     }
 
-    (numNodes == 1.asInteger).ifTrue { startNode := node }
+    (numNodes == 1).ifTrue { startNode := node }
     return node
   }
 
@@ -238,17 +238,17 @@ class newControlFlowGraph -> ControlFlowGraph {
 class newLoopStructureGraph -> LoopStructureGraph {
   def root: SimpleLoop = newSimpleLoopWithBasicBlock (done) reducible (false)
   def loops: core.Vector = core.newVector
-  var loopCounter: Number := 0.asInteger
+  var loopCounter: Number := 0
 
-  root.nestingLevel(0.asInteger)
+  root.nestingLevel(0)
   root.counter := loopCounter
-  loopCounter := loopCounter + 1.asInteger
+  loopCounter := loopCounter + 1
   loops.append(root)
 
   method createNewLoop (bb: BasicBlock) reducible (isReducible: Boolean) -> SimpleLoop {
     var loop: SimpleLoop :=  newSimpleLoopWithBasicBlock (bb) reducible (isReducible)
     loop.counter := loopCounter
-    loopCounter := loopCounter + 1.asInteger
+    loopCounter := loopCounter + 1
     loops.append(loop)
     return loop
   }
@@ -261,15 +261,15 @@ class newLoopStructureGraph -> LoopStructureGraph {
         }
       }
     }
-    calculateNestingLevelRec (root) depth (0.asInteger)
+    calculateNestingLevelRec (root) depth (0)
     done
   }
 
   method calculateNestingLevelRec (loop: SimpleLoop) depth (depth: Number) -> Done {
     loop.depthLevel := depth
     loop.children.forEach { liter: SimpleLoop ->
-      calculateNestingLevelRec (liter) depth (depth + 1.asInteger)
-      loop.nestingLevel (loop.nestingLevel.max(1.asInteger + liter.nestingLevel))
+      calculateNestingLevelRec (liter) depth (depth + 1)
+      loop.nestingLevel (loop.nestingLevel.max(1 + liter.nestingLevel))
     }
     done
   }
@@ -281,12 +281,12 @@ class newLoopStructureGraph -> LoopStructureGraph {
 
 
 class newSimpleLoopWithBasicBlock (bb: BasicBlock) reducible (isReducible': Boolean) -> SimpleLoop {
-  var counter: Number := 0.asInteger
-  var depthLevel: Number := 0.asInteger
+  var counter: Number := 0
+  var depthLevel: Number := 0
 
   var parent_: SimpleLoop := done
   var isRoot_: Boolean  := false
-  var nestingLevel_: Number := 0.asInteger
+  var nestingLevel_: Number := 0
 
   def header: BasicBlock = bb
   def isReducible: Boolean = isReducible'
@@ -325,7 +325,7 @@ class newSimpleLoopWithBasicBlock (bb: BasicBlock) reducible (isReducible': Bool
 
   method nestingLevel (level: Number) -> Done {
     nestingLevel_ := level
-    (level == 0.asInteger).ifTrue { setIsRoot }
+    (level == 0).ifTrue { setIsRoot }
     done
   }
 }
@@ -333,7 +333,7 @@ class newSimpleLoopWithBasicBlock (bb: BasicBlock) reducible (isReducible': Bool
 class newUnionFindNode -> UnionFindNode {
   var parent_: UnionFindNode := done
   var bb_: BasicBlock := done
-  var dfsNumber_: Number := 0.asInteger
+  var dfsNumber_: Number := 0
   var loop: SimpleLoop := done
 
   method initNode (bb: BasicBlock) dfs (dfsNumber: Number) -> Done {
@@ -376,15 +376,15 @@ class newLoopTesterApp -> LoopTesterApp {
   def cfg: ControlFlowGraph = newControlFlowGraph
   def lsg: LoopStructureGraph = newLoopStructureGraph
 
-  cfg.createNode(1.asInteger)
+  cfg.createNode(1)
 
   method buildDiamond (start: Number) -> Number {
     var bb0: Number := start
-    newBasicBlockEdgeFor (cfg) from (bb0)               to (bb0 + 1.asInteger)
-    newBasicBlockEdgeFor (cfg) from (bb0)               to (bb0 + 2.asInteger)
-    newBasicBlockEdgeFor (cfg) from (bb0 + 1.asInteger) to (bb0 + 3.asInteger)
-    newBasicBlockEdgeFor (cfg) from (bb0 + 2.asInteger) to (bb0 + 3.asInteger)
-    return bb0 + 3.asInteger
+    newBasicBlockEdgeFor (cfg) from (bb0)               to (bb0 + 1)
+    newBasicBlockEdgeFor (cfg) from (bb0)               to (bb0 + 2)
+    newBasicBlockEdgeFor (cfg) from (bb0 + 1) to (bb0 + 3)
+    newBasicBlockEdgeFor (cfg) from (bb0 + 2) to (bb0 + 3)
+    return bb0 + 3
   }
 
   method buildConnect (start: Number) end (end: Number) -> Done {
@@ -393,23 +393,23 @@ class newLoopTesterApp -> LoopTesterApp {
   }
 
   method buildStraight (start: Number) n (n: Number) -> Number {
-    0.asInteger.to (n - 1.asInteger) do { i: Number ->
-      buildConnect (start + i) end (start + i + 1.asInteger)
+    0.to (n - 1) do { i: Number ->
+      buildConnect (start + i) end (start + i + 1)
     }
     return start + n
   }
 
   method buildBaseLoop (from: Number) -> Number {
-    var header: Number := buildStraight (from) n (1.asInteger)
+    var header: Number := buildStraight (from) n (1)
     var diamond1: Number := buildDiamond (header)
-    var d11: Number := buildStraight (diamond1) n (1.asInteger)
+    var d11: Number := buildStraight (diamond1) n (1)
     var diamond2: Number := buildDiamond (d11)
-    var footer: Number := buildStraight (diamond2) n (1.asInteger)
+    var footer: Number := buildStraight (diamond2) n (1)
 
     buildConnect (diamond2) end (d11)
     buildConnect (diamond1) end (header)
     buildConnect (footer)   end (from)
-    footer := buildStraight (footer) n (1.asInteger)
+    footer := buildStraight (footer) n (1)
     return footer
   }
 
@@ -424,23 +424,23 @@ class newLoopTesterApp -> LoopTesterApp {
   }
 
   method constructCFG (parLoops: Number) p (pparLoops: Number) p (ppparLoops: Number) -> Done {
-    var n: Number := 3.asInteger
+    var n: Number := 3
 
     parLoops.timesRepeat {
-      cfg.createNode (n + 1.asInteger)
-      buildConnect (2.asInteger) end (n + 1.asInteger)
-      n := n + 1.asInteger
+      cfg.createNode (n + 1)
+      buildConnect (2) end (n + 1)
+      n := n + 1
 
       pparLoops.timesRepeat {
         var top: Number := n
-        n := buildStraight (n) n (1.asInteger)
+        n := buildStraight (n) n (1)
         ppparLoops.timesRepeat { n := buildBaseLoop(n) }
-        var bottom: Number := buildStraight (n) n (1.asInteger)
+        var bottom: Number := buildStraight (n) n (1)
         buildConnect (n) end (top)
         n := bottom
       }
 
-      buildConnect (n) end (1.asInteger)
+      buildConnect (n) end (1)
     }
     done
   }
@@ -459,10 +459,10 @@ class newLoopTesterApp -> LoopTesterApp {
   }
 
   method constructSimpleCFG -> Done {
-    cfg.createNode (1.asInteger)
-    buildBaseLoop (1.asInteger)
-    cfg.createNode (2.asInteger)
-    newBasicBlockEdgeFor (cfg) from (1.asInteger) to (3.asInteger)
+    cfg.createNode (1)
+    buildBaseLoop (1)
+    cfg.createNode (2)
+    newBasicBlockEdgeFor (cfg) from (1) to (3)
     done
   }
 }
@@ -470,13 +470,13 @@ class newLoopTesterApp -> LoopTesterApp {
 class newHavlakLoopFinder (cfg': ControlFlowGraph) lsg (lsg': LoopStructureGraph) -> HavlakLoopFinder {
   def cfg: ControlFlowGraph = cfg'
   def lsg: LoopStructureGraph = lsg'
-  def unvisited: Number = 2147483647.asInteger
-  def maxNonBackPreds: Number = 32.asInteger * 1024.asInteger
+  def unvisited: Number = 2147483647
+  def maxNonBackPreds: Number = 32 * 1024
   def nonBackPreds: core.Vector = core.newVector
   def backPreds: core.Vector = core.newVector
   def number: core.Dictionary = core.newIdentityDictionary
 
-  var maxSize: Number := 0.asInteger
+  var maxSize: Number := 0
   var header: List := done
   var htype: List := done
   var last: List := done
@@ -497,10 +497,10 @@ class newHavlakLoopFinder (cfg': ControlFlowGraph) lsg (lsg': LoopStructureGraph
     var lastId: Number := current
     var outerBlocks: core.Vector := currentNode.outEdges
 
-    1.asInteger.to(outerBlocks.size) do { i: Number ->
+    1.to(outerBlocks.size) do { i: Number ->
       var target: BasicBlock := outerBlocks.at(i)
       (number.at(target) == unvisited). ifTrue {
-        lastId := doDFS (target) current (lastId + 1.asInteger)
+        lastId := doDFS (target) current (lastId + 1)
       }
     }
 
@@ -513,13 +513,13 @@ class newHavlakLoopFinder (cfg': ControlFlowGraph) lsg (lsg': LoopStructureGraph
       number.at (bb) put (unvisited)
     }
 
-    doDFS (cfg.startBasicBlock) current (1.asInteger)
+    doDFS (cfg.startBasicBlock) current (1)
     done
   }
 
   method identifyEdges (size: Number) -> Done {
-    1.asInteger.to(size) do { w: Number ->
-      header.at (w) put (1.asInteger)
+    1.to(size) do { w: Number ->
+      header.at (w) put (1)
       htype.at (w) put (BBNonHeader)
 
       var nodeW: BasicBlock := nodes.at(w).bb
@@ -532,7 +532,7 @@ class newHavlakLoopFinder (cfg': ControlFlowGraph) lsg (lsg': LoopStructureGraph
   }
 
   method processEdges (nodeW: BasicBlock) w (w: Number) -> Done {
-    (nodeW.numPred > 0.asInteger).ifTrue {
+    (nodeW.numPred > 0).ifTrue {
       nodeW.inEdges.forEach { nodeV: BasicBlock ->
         var v: Number := number.at (nodeV)
         (v != unvisited). ifTrue {
@@ -564,7 +564,7 @@ class newHavlakLoopFinder (cfg': ControlFlowGraph) lsg (lsg': LoopStructureGraph
       maxSize := size
     }
 
-    1.asInteger.to (size) do { i: Number ->
+    1.to (size) do { i: Number ->
       nonBackPreds.append (core.newSet)
       backPreds.append (core.newVector)
       nodes.at (i) put (newUnionFindNode)
@@ -572,9 +572,9 @@ class newHavlakLoopFinder (cfg': ControlFlowGraph) lsg (lsg': LoopStructureGraph
 
     initAllNodes
     identifyEdges(size)
-    header.at (1.asInteger) put (1.asInteger)
+    header.at (1) put (1)
 
-    size.downTo (1.asInteger) do { w: Number ->
+    size.downTo (1) do { w: Number ->
       var nodePool: core.Vector := core.newVector
       var nodeW: BasicBlock := nodes.at(w).bb
 
@@ -584,7 +584,7 @@ class newHavlakLoopFinder (cfg': ControlFlowGraph) lsg (lsg': LoopStructureGraph
         var workList: core.Vector := core.newVector
         nodePool.forEach { niter: UnionFindNode -> workList.append(niter) }
 
-        (nodePool.size != 0.asInteger).ifTrue {
+        (nodePool.size != 0).ifTrue {
           htype.at (w) put (BBReducible)
         }
 
@@ -596,7 +596,7 @@ class newHavlakLoopFinder (cfg': ControlFlowGraph) lsg (lsg': LoopStructureGraph
           stepEProcessNonBackPreds (w) nodePool (nodePool) workList (workList) x (x)
         }
 
-        ((nodePool.size > 0.asInteger).or { htype.at(w) == BBSelf }). ifTrue {
+        ((nodePool.size > 0).or { htype.at(w) == BBSelf }). ifTrue {
           var loop: SimpleLoop := lsg.createNewLoop (nodeW) reducible (htype.at(w) != BBIrreducible)
           setLoopAttribute (w) nodePool (nodePool) loop (loop)
         }

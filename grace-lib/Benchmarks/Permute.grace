@@ -28,13 +28,13 @@ import "harness" as harness
 class newPermute -> harness.Benchmark {
   inherit harness.newBenchmark
 
-  var count: Number := 0.asInteger
+  var count: Number := 0
   var v: List := done
 
   method benchmark -> Number {
-    count := 0.asInteger
-    v := platform.kernel.Array.new(6.asInteger)withAll(0.asInteger)
-    permute(6.asInteger)
+    count := 0
+    v := platform.kernel.Array.new(6)withAll(0)
+    permute(6)
     count
   }
 
@@ -43,12 +43,12 @@ class newPermute -> harness.Benchmark {
   }
 
   method permute(n: Number) -> Done {
-    count := count + 1.asInteger
+    count := count + 1
     (n != 0).ifTrue {
-      permute (n - 1.asInteger)
-      n.downTo(1.asInteger) do { i: Number ->
+      permute (n - 1)
+      n.downTo(1) do { i: Number ->
         swap (n) with (i)
-        permute (n - 1.asInteger)
+        permute (n - 1)
         swap (n) with (i)
       }
     }

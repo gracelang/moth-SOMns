@@ -20,7 +20,7 @@ type Run = interface {
 
 class newBenchmark -> Benchmark {
   method innerBenchmarkLoop(innerIterations: Number) -> Boolean {
-    1.asInteger.to(innerIterations)do { i: Number ->
+    1.to(innerIterations)do { i: Number ->
       verifyResult(benchmark).ifFalse {
         return false
       }
@@ -33,10 +33,10 @@ class newBenchmark -> Benchmark {
 }
 
 class newRandom -> Random {
-  var seed: Number := 74755.asInteger
+  var seed: Number := 74755
 
   method next -> Number {
-    seed := ((seed * 1309.asInteger) + 13849.asInteger) & 65535.asInteger
+    seed := ((seed * 1309) + 13849) & 65535
     seed
   }
 }
@@ -47,12 +47,12 @@ class newJenkins(seed': Number) -> Random {
 
   // Original version, with complete set of conversions.
   method next -> Number {
-    seed := ((seed      + 2127912214.asInteger)       + (seed.as32BitUnsignedValue.bitLeftShift (12.asInteger)).as32BitSignedValue).as32BitSignedValue
-    seed := ((seed.bitXor(3345072700.asInteger)).bitXor((seed.as32BitUnsignedValue.bitRightShift(19.asInteger))).as32BitSignedValue)
-    seed := ((seed      +  374761393.asInteger)       + (seed.as32BitUnsignedValue.bitLeftShift  (5.asInteger)).as32BitSignedValue).as32BitSignedValue
-    seed := ((seed      + 3550635116.asInteger ).bitXor((seed.as32BitUnsignedValue.bitLeftShift  (9.asInteger)).as32BitSignedValue).as32BitSignedValue)
-    seed := ((seed      + 4251993797.asInteger)       + (seed.as32BitUnsignedValue.bitLeftShift  (3.asInteger)).as32BitSignedValue).as32BitSignedValue
-    seed := ((seed.bitXor(3042594569.asInteger)).bitXor((seed.as32BitUnsignedValue.bitRightShift(16.asInteger))).as32BitSignedValue)
+    seed := ((seed      + 2127912214)       + (seed.as32BitUnsignedValue.bitLeftShift (12)).as32BitSignedValue).as32BitSignedValue
+    seed := ((seed.bitXor(3345072700)).bitXor((seed.as32BitUnsignedValue.bitRightShift(19))).as32BitSignedValue)
+    seed := ((seed      +  374761393)       + (seed.as32BitUnsignedValue.bitLeftShift  (5)).as32BitSignedValue).as32BitSignedValue
+    seed := ((seed      + 3550635116 ).bitXor((seed.as32BitUnsignedValue.bitLeftShift  (9)).as32BitSignedValue).as32BitSignedValue)
+    seed := ((seed      + 4251993797)       + (seed.as32BitUnsignedValue.bitLeftShift  (3)).as32BitSignedValue).as32BitSignedValue
+    seed := ((seed.bitXor(3042594569)).bitXor((seed.as32BitUnsignedValue.bitRightShift(16))).as32BitSignedValue)
     seed
   }
 }
@@ -60,9 +60,9 @@ class newJenkins(seed': Number) -> Random {
 class newRun(name: String) -> Run {
   def benchmarkSuite: Done = io.importModuleByName(name)
 
-  var total: Number := 0.asInteger
-  var numIterations: Number := 1.asInteger
-  var innerIterations: Number := 1.asInteger
+  var total: Number := 0
+  var numIterations: Number := 1
+  var innerIterations: Number := 1
 
   method runBenchmark -> Done {
     print("Start {name} benchmark ... ")
@@ -87,7 +87,7 @@ class newRun(name: String) -> Run {
   }
 
   method doRuns(bench: Benchmark) -> Done {
-    1.asInteger.to(numIterations) do { i: Number ->
+    1.to(numIterations) do { i: Number ->
       measure(bench)
     }
   }
@@ -106,12 +106,12 @@ class newRun(name: String) -> Run {
 }
 
 method processArguments(args: Done) -> Run {
-  def run: Run = newRun(args.at(2.asInteger))
+  def run: Run = newRun(args.at 2)
 
   (args.size > 2).ifTrue {
-    run.numIterations(args.at(3.asInteger).asInteger)
+    run.numIterations(args.at(3).asInteger)
     (args.size > 3).ifTrue {
-      run.innerIterations(args.at(4.asInteger).asInteger)
+      run.innerIterations(args.at(4).asInteger)
     }
   }
   run
@@ -128,7 +128,7 @@ method printUsage -> Done {
 
 (args.size < 2).ifTrue {
   printUsage
-  return 1.asInteger
+  return 1
 }
 
 def run: Run = processArguments(args)

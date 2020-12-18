@@ -34,14 +34,14 @@ class newBounce -> harness.Benchmark {
   method benchmark -> Number {
     def random: harness.Random = harness.newRandom
 
-    def ballCount: Number = 100.asInteger
-    var bounces: Number := 0.asInteger
+    def ballCount: Number = 100
+    var bounces: Number := 0
     def balls: List = platform.kernel.Array.new (ballCount) withAll { newBall(random) }
 
-    1.asInteger.to(50.asInteger) do { i: Number ->
+    1.to(50) do { i: Number ->
       balls.do { ball: Ball ->
         ball.bounce.ifTrue {
-          bounces := bounces + 1.asInteger
+          bounces := bounces + 1
         }
       }
     }
@@ -50,19 +50,19 @@ class newBounce -> harness.Benchmark {
   }
 
   method verifyResult(result: Number) -> Boolean {
-    result == 1331.asInteger
+    result == 1331
   }
 }
 
 class newBall(random: harness.Random) -> Ball {
-  var x: Number := random.next % 500.asInteger
-  var y: Number := random.next % 500.asInteger
-  var xVel: Number := (random.next % 300.asInteger) - 150.asInteger
-  var yVel: Number := (random.next % 300.asInteger) - 150.asInteger
+  var x: Number := random.next % 500
+  var y: Number := random.next % 500
+  var xVel: Number := (random.next % 300) - 150
+  var yVel: Number := (random.next % 300) - 150
 
   method bounce -> Boolean {
-    def xLimit: Number = 500.asInteger
-    def yLimit: Number = 500.asInteger
+    def xLimit: Number = 500
+    def yLimit: Number = 500
     var bounced: Boolean := false
 
     x := x + xVel
@@ -70,24 +70,24 @@ class newBall(random: harness.Random) -> Ball {
 
     (x > xLimit).ifTrue {
       x := xLimit
-      xVel := 0.asInteger - xVel.abs
+      xVel := 0 - xVel.abs
       bounced := true
     }
 
-    (x < 0.asInteger).ifTrue {
-      x := 0.asInteger
+    (x < 0).ifTrue {
+      x := 0
       xVel := xVel.abs
       bounced := true
     }
 
     (y > yLimit).ifTrue {
       y := yLimit
-      yVel := 0.asInteger - yVel.abs
+      yVel := 0 - yVel.abs
       bounced := true
     }
 
-    (y < 0.asInteger).ifTrue {
-      y := 0.asInteger
+    (y < 0).ifTrue {
+      y := 0
       yVel := yVel.abs
       bounced := true
     }

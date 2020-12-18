@@ -58,9 +58,9 @@ class newMandelbrot -> harness.Benchmark {
   }
 
   method verify(result: Number)inner(innerIterations: Number) -> Boolean {
-    (innerIterations == 500.asInteger).ifTrue { return result == 191.asInteger }
-    (innerIterations == 750.asInteger).ifTrue { return result ==  50.asInteger }
-    (innerIterations ==   1.asInteger).ifTrue { return result == 128.asInteger }
+    (innerIterations == 500).ifTrue { return result == 191 }
+    (innerIterations == 750).ifTrue { return result ==  50 }
+    (innerIterations ==   1).ifTrue { return result == 128 }
 
     print("No verification result for {innerIterations} found")
     print("Result is: {result}")
@@ -68,14 +68,14 @@ class newMandelbrot -> harness.Benchmark {
   }
 
   method mandelbrot (size: Number) -> Number {
-    var sum: Number     := 0.asInteger
-    var byteAcc: Number := 0.asInteger
-    var bitNum: Number  := 0.asInteger
+    var sum: Number     := 0
+    var byteAcc: Number := 0
+    var bitNum: Number  := 0
 
-    var y: Number := 0.asInteger
+    var y: Number := 0
     { y < size }.whileTrue {
       var ci: Number := (2.0 * y / (size + 0)) - 1
-      var x: Number := 0.asInteger
+      var x: Number := 0
 
       { x < size }.whileTrue {
         var zr: Number := 0.0
@@ -83,11 +83,11 @@ class newMandelbrot -> harness.Benchmark {
         var zi: Number := 0.0
         var zizi: Number := 0.0
         var cr: Number := (2.0 * x / (size + 0)) - 1.5
-        var escape: Number := 0.asInteger
-        var z: Number := 0.asInteger
+        var escape: Number := 0
+        var z: Number := 0
         var notDone: Boolean := true
 
-        { notDone.and {z < 50.asInteger} }.whileTrue {
+        { notDone.and {z < 50} }.whileTrue {
           zr := zrzr - zizi + cr
           zi := 2.0 * zr * zi + ci
 
@@ -97,34 +97,34 @@ class newMandelbrot -> harness.Benchmark {
 
           ((zrzr + zizi) > 4).ifTrue {
             notDone := false
-            escape := 1.asInteger
+            escape := 1
           }
-          z := z + 1.asInteger
+          z := z + 1
         }
 
-        byteAcc := (byteAcc.bitLeftShift(1.asInteger)) + escape
-        bitNum := bitNum + 1.asInteger
+        byteAcc := (byteAcc.bitLeftShift(1)) + escape
+        bitNum := bitNum + 1
 
         // Code is very similar for these cases, but using separate
         // blocks ensures we skip the shifting when it is unnecessary,
         // which is in most cases.
-        (bitNum == 8.asInteger).ifTrue {
+        (bitNum == 8).ifTrue {
           sum       := sum.bitXor(byteAcc)
-          byteAcc   := 0.asInteger
-          bitNum    := 0.asInteger
+          byteAcc   := 0
+          bitNum    := 0
         } ifFalse {
-          (x == (size - 1.asInteger)).ifTrue {
-            byteAcc := byteAcc << (8.asInteger - bitNum)
+          (x == (size - 1)).ifTrue {
+            byteAcc := byteAcc << (8 - bitNum)
             sum     := sum.bitXor(byteAcc)
-            byteAcc := 0.asInteger
-            bitNum  := 0.asInteger
+            byteAcc := 0
+            bitNum  := 0
           }
         }
 
-        x := x + 1.asInteger
+        x := x + 1
       }
 
-      y := y + 1.asInteger
+      y := y + 1
     }
 
     sum

@@ -804,8 +804,14 @@ public class JsonTreeTranslator {
       SSymbol[] signatures = parseInterfaceSignatures(node);
       return astBuilder.literalBuilder.type(signatures, source(node));
     } else if (nodeType(node).equals("number")) {
-      double value = Double.parseDouble(node.get("digits").getAsString());
-      return astBuilder.literalBuilder.number(value, source(node));
+      String num = node.get("digits").getAsString();
+      if (num.contains(".")) {
+        double value = Double.parseDouble(num);
+        return astBuilder.literalBuilder.number(value, source(node));
+      } else {
+        long value = Long.parseLong(num);
+        return astBuilder.literalBuilder.number(value, source(node));
+      }
     } else if (nodeType(node).equals("string-literal")) {
       return astBuilder.literalBuilder.string(node.get("raw").getAsString(), source(node));
 

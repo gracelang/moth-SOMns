@@ -13,11 +13,11 @@
 
 import "harness" as harness
 
-var IDENT_1: Number := 1.asInteger
-var IDENT_2: Number := 2.asInteger
-var IDENT_3: Number := 3.asInteger
-var IDENT_4: Number := 4.asInteger
-var IDENT_5: Number := 5.asInteger
+var IDENT_1: Number := 1
+var IDENT_2: Number := 2
+var IDENT_3: Number := 3
+var IDENT_4: Number := 4
+var IDENT_5: Number := 5
 
 type Record = interface {
     ptrComp
@@ -46,15 +46,15 @@ class newRecord(ptrComp': Record, discr': Number, enumComp': Number, intComp': N
 }
 
 method newRecord -> Record {
-    newRecord(done, 0.asInteger, 0.asInteger, 0.asInteger, "")
+    newRecord(done, 0, 0, 0, "")
 }
 
-var intGlob: Number := 0.asInteger
+var intGlob: Number := 0
 var boolGlob: Boolean := false
 var char1Glob: String := "\\0"
 var char2_glob: String := "\\0"
-var array1Glob: List := platform.kernel.Array. new (51.asInteger) withAll { 0.asInteger }
-var array2Glob: List := platform.kernel.Array. new (51.asInteger) withAll { array1Glob }
+var array1Glob: List := platform.kernel.Array. new (51) withAll { 0 }
+var array2Glob: List := platform.kernel.Array. new (51) withAll { array1Glob }
 var ptrGlb: Record
 
 // --------------------------------------------------------------------------------------------------------------
@@ -65,7 +65,7 @@ method proc0(innerIterations: Number) -> Done {
     ptrGlb.ptrComp := newRecord
     ptrGlb.discr := IDENT_1
     ptrGlb.enumComp := IDENT_3
-    ptrGlb.intComp := 40.asInteger
+    ptrGlb.intComp := 40
     ptrGlb.stringComp := "DHRYSTONE PROGRAM, SOME STRING"
 
     var string1Loc: String
@@ -76,21 +76,21 @@ method proc0(innerIterations: Number) -> Done {
     var enumLoc: Number
 
     string1Loc := "DHRYSTONE PROGRAM, 1'ST STRING"
-    array2Glob.at(9.asInteger).at (8.asInteger) put (10.asInteger)
+    array2Glob.at(9).at (8) put (10)
 
-    1.asInteger.to(innerIterations) do { i: Number ->
+    1.to(innerIterations) do { i: Number ->
         proc5
         proc4
-        intLoc1 := 2.asInteger
-        intLoc2 := 3.asInteger
+        intLoc1 := 2
+        intLoc2 := 3
         string2Loc := "DHRYSTONE PROGRAM, 2'ND STRING"
 
         enumLoc := IDENT_2
         boolGlob := !(func2(string1Loc, string2Loc))
         { intLoc1 < intLoc2 }.whileTrue {
-            intLoc3 := 5.asInteger * intLoc1 - intLoc2
+            intLoc3 := 5 * intLoc1 - intLoc2
             intLoc3 := proc7(intLoc1, intLoc2)
-            intLoc1 := intLoc1 + 1.asInteger
+            intLoc1 := intLoc1 + 1
         }
 
         proc8(array1Glob, array2Glob, intLoc1, intLoc3)
@@ -101,12 +101,12 @@ method proc0(innerIterations: Number) -> Done {
             (enumLoc == func1(charIndex, "C")). ifTrue {
                 enumLoc := proc6(IDENT_1)
             }
-            charIndex := (charIndex.codepointAt(1.asInteger) + 1.asInteger).asCodepointString
+            charIndex := (charIndex.codepointAt(1) + 1).asCodepointString
         }
 
         intLoc3 := intLoc2 * intLoc1
         intLoc2 := intLoc3 / intLoc1
-        intLoc2 := 7.asInteger * (intLoc3 - intLoc2) - intLoc1
+        intLoc2 := 7 * (intLoc3 - intLoc2) - intLoc1
         intLoc1 := proc2(intLoc1)
     }
 }
@@ -118,16 +118,16 @@ method proc1(ptrParIn': Record) -> Record {
     ptrParIn.ptrComp := tmpPtr
     var nextRecord: Record := tmpPtr
 
-    ptrParIn.intComp := 5.asInteger
+    ptrParIn.intComp := 5
     nextRecord.intComp := ptrParIn.intComp
     nextRecord.ptrComp := ptrParIn.ptrComp
     nextRecord.ptrComp := proc3(nextRecord.ptrComp)
 
     (nextRecord.discr == IDENT_1).ifTrue {
-        nextRecord.intComp  := 6.asInteger
+        nextRecord.intComp  := 6
         nextRecord.enumComp := proc6(ptrParIn.enumComp)
         nextRecord.ptrComp  := ptrGlb.ptrComp
-        nextRecord.intComp  := proc7(nextRecord.intComp, 10.asInteger)
+        nextRecord.intComp  := proc7(nextRecord.intComp, 10)
     } ifFalse {
         ptrParIn := nextRecord.copy()
     }
@@ -138,7 +138,7 @@ method proc1(ptrParIn': Record) -> Record {
 
 method proc2(intParIO': Number) -> Number {
     var intParIO: Number := intParIO'
-    var intLoc: Number := intParIO + 10.asInteger
+    var intLoc: Number := intParIO + 10
     var enumLoc: Number
 
     { true }. whileTrue {
@@ -157,9 +157,9 @@ method proc3(ptrParOut': Record) -> Record {
     (!ptrGlb.isNil).ifTrue {
         ptrParOut := ptrGlb.ptrComp
     } ifFalse {
-        intGlob := 100.asInteger
+        intGlob := 100
     }
-    ptrGlb.intComp := proc7(10.asInteger, intGlob)
+    ptrGlb.intComp := proc7(10, intGlob)
     ptrParOut
 }
 
@@ -191,27 +191,27 @@ method proc6(enumParIn: Number) -> Number {
 }
 
 method proc7(intParI1: Number, intParI2: Number) -> Number {
-    var intLoc: Number := intParI1 + 2.asInteger
+    var intLoc: Number := intParI1 + 2
     var intParOut: Number := intParI2 + intLoc
 
     intParOut
 }
 
 method proc8(array1Par: List, array2Par: List, intParI1: Number, intParI2: Number) -> Done {
-    var intLoc: Number := intParI1 + 5.asInteger
+    var intLoc: Number := intParI1 + 5
 
-    array1Par .at (intLoc + 1.asInteger  ) put( intParI2 )
-    array1Par .at (intLoc + 2.asInteger  ) put( array1Par.at(intLoc + 1.asInteger) )
-    array1Par .at (intLoc + 31.asInteger ) put( intLoc )
+    array1Par .at (intLoc + 1  ) put( intParI2 )
+    array1Par .at (intLoc + 2  ) put( array1Par.at(intLoc + 1) )
+    array1Par .at (intLoc + 31 ) put( intLoc )
 
-    intLoc.to(intLoc + 1.asInteger) do { intIndex: Number ->
-        array2Par.at (intLoc + 1.asInteger).at (intIndex + 1.asInteger) put (intLoc)
+    intLoc.to(intLoc + 1) do { intIndex: Number ->
+        array2Par.at (intLoc + 1).at (intIndex + 1) put (intLoc)
     }
 
-    array2Par.at ( intLoc +  1.asInteger ) .at (intLoc)               put( array2Par.at (intLoc + 1.asInteger).at(intLoc) + 1.asInteger )
-    array2Par.at ( intLoc + 21.asInteger ) .at (intLoc + 1.asInteger) put( array1Par.at (intLoc + 1.asInteger)                          )
+    array2Par.at ( intLoc +  1 ) .at (intLoc)               put( array2Par.at (intLoc + 1).at(intLoc) + 1 )
+    array2Par.at ( intLoc + 21 ) .at (intLoc + 1) put( array1Par.at (intLoc + 1)                          )
 
-    intGlob := 5.asInteger
+    intGlob := 5
     done
 }
 
@@ -232,24 +232,24 @@ method func1(charPar1: String, charPar2: String) -> Number {
 }
 
 method func2(strParI1: String, strParI2: String) -> Boolean {
-    var intLoc: Number := 1.asInteger
+    var intLoc: Number := 1
     var charLoc: String
 
     {intLoc <= 1}. whileTrue {
-        (func1(strParI1.charAt(intLoc + 1.asInteger), strParI2.charAt(intLoc + 2.asInteger)) == IDENT_1).ifTrue {
+        (func1(strParI1.charAt(intLoc + 1), strParI2.charAt(intLoc + 2)) == IDENT_1).ifTrue {
             charLoc := "A"
-            intLoc := intLoc + 1.asInteger
+            intLoc := intLoc + 1
         }
 
     }
 
-    ((charLoc >= "W") && (charLoc <= "Z")).ifTrue { intLoc := 7.asInteger }
+    ((charLoc >= "W") && (charLoc <= "Z")).ifTrue { intLoc := 7 }
 
     (charLoc == "X"). ifTrue {
         return true
     } ifFalse {
         (strParI1 > strParI2). ifTrue {
-            intLoc := intLoc + 7.asInteger
+            intLoc := intLoc + 7
             return true
         } ifFalse {
             return false

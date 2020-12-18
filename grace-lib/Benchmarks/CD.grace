@@ -151,14 +151,14 @@ class newCD -> harness.Benchmark {
   inherit harness.newBenchmark
 
   method benchmark (numAircrafts: Number) -> Number {
-    var numFrames: Number := 200.asInteger
+    var numFrames: Number := 200
 
     var simulator: Simulator := newSimulator(numAircrafts)
     var detector: CollisionDectector := newCollisionDetector
 
-    var actualCollisions: Number := 0.asInteger
+    var actualCollisions: Number := 0
 
-    0.asInteger.to (numFrames - 1.asInteger) do { i: Number ->
+    0.to (numFrames - 1) do { i: Number ->
       var time: Number := i / 10.0
       var collisions: core.Vector := detector.handleNewFrame(simulator.simulate(time))
       actualCollisions := actualCollisions + collisions.size
@@ -172,12 +172,12 @@ class newCD -> harness.Benchmark {
   }
 
   method verify (actualCollisions: Number) resultFor (numAircrafts: Number) -> Boolean {
-    (numAircrafts == 1000.asInteger). ifTrue { return actualCollisions == 14484.asInteger }
-    (numAircrafts ==  500.asInteger). ifTrue { return actualCollisions == 14484.asInteger }
-    (numAircrafts ==  250.asInteger). ifTrue { return actualCollisions == 10830.asInteger }
-    (numAircrafts ==  200.asInteger). ifTrue { return actualCollisions ==  8655.asInteger }
-    (numAircrafts ==  100.asInteger). ifTrue { return actualCollisions ==  4305.asInteger }
-    (numAircrafts ==   10.asInteger). ifTrue { return actualCollisions ==   390.asInteger }
+    (numAircrafts == 1000). ifTrue { return actualCollisions == 14484 }
+    (numAircrafts ==  500). ifTrue { return actualCollisions == 14484 }
+    (numAircrafts ==  250). ifTrue { return actualCollisions == 10830 }
+    (numAircrafts ==  200). ifTrue { return actualCollisions ==  8655 }
+    (numAircrafts ==  100). ifTrue { return actualCollisions ==  4305 }
+    (numAircrafts ==   10). ifTrue { return actualCollisions ==   390 }
 
     print("No verification result for {numAircrafts} found.")
     print("Result is: {actualCollisions}")
@@ -199,18 +199,18 @@ class newVector2DWith(x': Number)and(y': Number) -> Vector2D {
 
   method compareTo (other: Vector2D) -> Number {
     var result: Number := compare (x') and (other.x)
-    (result != 0.asInteger). ifTrue { return result }
+    (result != 0). ifTrue { return result }
     return compare (y') and (other.y)
   }
 
   method compare (a: Number) and (b: Number) -> Number {
-    (a == b). ifTrue { return  0.asInteger }
-    (a  < b). ifTrue { return -1.asInteger }
-    (a  > b). ifTrue { return  1.asInteger }
+    (a == b). ifTrue { return  0 }
+    (a  < b). ifTrue { return -1 }
+    (a  > b). ifTrue { return  1 }
 
     // We say that NaN is smaller than non-NaN.
-    (a == a). ifTrue { return 1.asInteger }
-    return -1.asInteger
+    (a == a). ifTrue { return 1 }
+    return -1
   }
 }
 
@@ -456,10 +456,10 @@ class newRedBlackTree -> RedBlackTree {
     { x.notNil }. whileTrue {
       y := x
       var comparisonResult: Number := key.compareTo(x.key)
-      (comparisonResult < 0.asInteger). ifTrue {
+      (comparisonResult < 0). ifTrue {
         x := x.left
       } ifFalse {
-        (comparisonResult > 0.asInteger). ifTrue {
+        (comparisonResult > 0). ifTrue {
           x := x.right
         } ifFalse {
           var oldValue: Unknown := x.value
@@ -474,7 +474,7 @@ class newRedBlackTree -> RedBlackTree {
     y.isNil.ifTrue {
       root := z
     } ifFalse {
-      (key.compareTo(y.key) < 0.asInteger). ifTrue {
+      (key.compareTo(y.key) < 0). ifTrue {
         y.left(z)
       } ifFalse {
         y.right(z)
@@ -625,12 +625,12 @@ class newCallSign (val: Number) -> CallSign {
 
   method compareTo (other: CallSign) -> Number {
     return (val == other.value).ifTrue {
-      0.asInteger
+      0
     } ifFalse {
       (val < other.value).ifTrue {
-        -1.asInteger
+        -1
       } ifFalse {
-        1.asInteger
+        1
       }
     }
   }
@@ -675,9 +675,9 @@ class newCollisionDetector -> CollisionDectector {
     var allReduced: core.Vector := reduceCollisionSet (motions)
     var collisions: core.Vector := core.newVector
     allReduced.forEach { reduced: core.Vector ->
-      1.asInteger.to (reduced.size) do { i: Number ->
+      1.to (reduced.size) do { i: Number ->
         var motion1: Motion := reduced.at (i)
-        (i + 1.asInteger). to (reduced.size) do { j: Number ->
+        (i + 1). to (reduced.size) do { j: Number ->
           var motion2: Motion := reduced.at (j)
           var collision: Vector3D := motion1.findIntersection(motion2)
           collision.notNil.ifTrue {
@@ -780,7 +780,7 @@ class newCollisionDetector -> CollisionDectector {
 
     var result: core.Vector := core.newVector
     voxelMap.forEach { e: EntryWithKeyValue ->
-      (e.value.size > 1.asInteger). ifTrue { result.append(e.value) }
+      (e.value.size > 1). ifTrue { result.append(e.value) }
     }
     return result
   }
@@ -792,8 +792,8 @@ class newCollisionDetector -> CollisionDectector {
     var x: Number := GoodVoxelSize * xDiv
     var y: Number := GoodVoxelSize * yDiv
 
-    (position.x < 0.asInteger).ifTrue { x := x - GoodVoxelSize }
-    (position.y < 0.asInteger).ifTrue { y := y - GoodVoxelSize }
+    (position.x < 0).ifTrue { x := x - GoodVoxelSize }
+    (position.y < 0).ifTrue { y := y - GoodVoxelSize }
 
     return newVector2DWith(x)and(y)
   }
@@ -922,19 +922,19 @@ class newSimulator(numAircrafts': Number) -> Simulator {
   method numAircrafts -> Number { numAircrafts' }
   def aircrafts: core.Vector = core.newVector
 
-  0.asInteger.to (numAircrafts' - 1.asInteger) do { i: Number ->
+  0.to (numAircrafts' - 1) do { i: Number ->
     aircrafts.append(newCallSign(i))
   }
 
   method simulate (time: Number) -> core.Vector {
     var frame: core.Vector := core.newVector
 
-    0.asInteger.to (aircrafts.size - 2.asInteger) by (2.asInteger) do { i: Number ->
-      frame.append (newAircraft (aircrafts.at(i + 1.asInteger))
+    0.to (aircrafts.size - 2) by (2) do { i: Number ->
+      frame.append (newAircraft (aircrafts.at(i + 1))
                               pos (newVector3DWith( time                     )
                                               and ( (time.cos * 2) + (i * 3) )
                                               and ( 10                       )))
-      frame.append (newAircraft (aircrafts.at(i + 2.asInteger))
+      frame.append (newAircraft (aircrafts.at(i + 2))
                               pos (newVector3DWith( time                     )
                                                and( (time.sin * 2) + (i * 3) )
                                                and( 10                       )))

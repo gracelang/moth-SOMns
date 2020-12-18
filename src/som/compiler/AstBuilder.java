@@ -1041,6 +1041,13 @@ public class AstBuilder {
     }
 
     /**
+     * Creates a SOM number literal from the given string.
+     */
+    public IntegerLiteralNode number(final long value, final SourceSection sourceSection) {
+      return new IntegerLiteralNode(value).initialize(sourceSection);
+    }
+
+    /**
      * Creates a SOM string literal from the given string.
      */
     public StringLiteralNode string(final String value, final SourceSection sourceSection) {
