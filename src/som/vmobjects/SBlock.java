@@ -48,14 +48,21 @@ public final class SBlock extends SAbstractObject implements SObjectWithContext 
 
   private final SInvokable        method;
   private final MaterializedFrame context;
+  private final SInvokable        pattern;
 
-  public SBlock(final SInvokable blockMethod, final MaterializedFrame context) {
+  public SBlock(final SInvokable blockMethod, final SInvokable pattern,
+      final MaterializedFrame context) {
     this.method = blockMethod;
     this.context = context;
+    this.pattern = pattern;
   }
 
   public SInvokable getMethod() {
     return method;
+  }
+
+  public SInvokable getPattern() {
+    return pattern;
   }
 
   @Override

@@ -32,6 +32,7 @@ import static som.interpreter.SNodeFactory.createMessageSend;
 import static som.vm.Symbols.symbolFor;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.function.BiFunction;
@@ -614,7 +615,7 @@ public class AstBuilder {
      *
      * #foo__λ5@8::
      */
-    public ExpressionNode block(final SSymbol[] parameters,
+    public ExpressionNode block(final SSymbol[] parameters, final JsonObject pattern,
         final JsonObject[] parameterTypes, final SourceSection[] parameterSources,
         final SSymbol[] locals, final JsonObject[] localTypes, final boolean[] localImmutable,
         final SourceSection[] localSources, final JsonArray body,
@@ -684,10 +685,15 @@ public class AstBuilder {
         }
       }
 
+      // Translate the pattern for the block
+      ExpressionNode patternExpr = translator.translate(pattern);
+
       // Assemble and return the completed block
       return scopeManager.assembleCurrentBlock(
           SNodeFactory.createSequence(expressions, sourceManager.empty()),
-          sourceSection);
+          patternExpr == null ? null
+              : SNodeFactory.createSequence(Arrays.asList(patternExpr), sourceManager.empty()),
+          sourceManager, sourceSection);
     }
 
     /**

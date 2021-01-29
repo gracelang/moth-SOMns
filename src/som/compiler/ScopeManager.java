@@ -40,6 +40,7 @@ import som.compiler.MixinDefinition.SlotDefinition;
 import som.interpreter.SomLanguage;
 import som.interpreter.nodes.ExpressionNode;
 import som.interpreter.nodes.SequenceNode;
+import som.vm.Symbols;
 import som.vm.VmSettings;
 import som.vmobjects.SInvokable;
 import som.vmobjects.SSymbol;
@@ -200,20 +201,37 @@ public class ScopeManager {
    * information from the enclosing context.
    */
   public ExpressionNode assembleCurrentBlock(final ExpressionNode body,
+      final ExpressionNode pattern, final SourceManager sourceManager,
       final SourceSection sourceSection) {
     MethodBuilder builder = popMethod();
     SInvokable blockMethod =
         builder.assemble(body, AccessModifier.BLOCK_METHOD, sourceSection);
     peekMethod().addEmbeddedBlockMethod(blockMethod);
 
+    SInvokable patternMethod = null;
+    if (pattern != null) {
+      // Create the new block
+      MethodBuilder nbuilder = newBlock(new SSymbol("pattern@" + builder.getName()));
+
+      // Set the parameters
+      nbuilder.addArgument(Symbols.BLOCK_SELF, null, sourceManager.empty());
+      nbuilder.setVarsOnMethodScope();
+      nbuilder.finalizeMethodScope();
+
+      popMethod();
+      patternMethod = nbuilder.assemble(pattern, AccessModifier.BLOCK_METHOD, sourceSection);
+      peekMethod().addEmbeddedBlockMethod(patternMethod);
+    }
+
     ExpressionNode blockExpression;
     if (builder.requiresContext() || VmSettings.TRUFFLE_DEBUGGER_ENABLED) {
       blockExpression =
           new som.interpreter.nodes.literals.BlockNode.BlockNodeWithContext(blockMethod,
-              builder.accessesLocalOfOuterScope());
+              patternMethod, builder.accessesLocalOfOuterScope());
     } else {
-      blockExpression = new som.interpreter.nodes.literals.BlockNode(blockMethod,
-          builder.accessesLocalOfOuterScope());
+      blockExpression =
+          new som.interpreter.nodes.literals.BlockNode(blockMethod, patternMethod,
+              builder.accessesLocalOfOuterScope());
     }
     blockExpression.initialize(sourceSection);
     return blockExpression;

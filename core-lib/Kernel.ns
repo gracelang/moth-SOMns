@@ -76,6 +76,7 @@ class Kernel vmMirror: vmMirror = Object <: Value (
   public class Type = Value ()
   (
     public checkOrError: aObj = ( vmMirror type: self checkOrError: aObj )
+    public matches: aObj = (^ [self checkOrError: aObj. true] on: Exception do: [ :e | false])
   )
 
   public class Object = Thing ()
@@ -93,6 +94,8 @@ class Kernel vmMirror: vmMirror = Object <: Value (
     public <> other = ( ^ (self = other) not )
     public != other = ( ^ self <> other )
     public copy = ( ^ self )
+
+    public matches: arg = ( ^ self == arg )
   )
 
   (* Transfer objects are handled almost identically to normal objects.
@@ -128,6 +131,8 @@ class Kernel vmMirror: vmMirror = Object <: Value (
     (* Logical operations *)
     public || boolean = ( ^ self or: boolean  )
     public && boolean = ( ^ self and: boolean )
+    
+    public matches: arg = ( ^ self == arg )
   )
 
   public class True = Boolean ()
@@ -261,6 +266,8 @@ class Kernel vmMirror: vmMirror = Object <: Value (
     public max: otherInt = (
       self < otherInt ifTrue: [ ^ otherInt ] ifFalse: [ ^ self ]
     )
+    
+    public matches: arg = ( ^ self == arg )
   ) : (
     public fromString: aString = ( ^ vmMirror intFromString: aString )
   )
@@ -319,6 +326,8 @@ class Kernel vmMirror: vmMirror = Object <: Value (
       i:: self.
       [ i >= limit ] whileTrue: [ block value: i. i:: i - 1.0 ]
     )
+    
+    public matches: arg = ( ^ self == arg )
   ) : (
     public PositiveInfinity = ( ^ vmMirror doublePositiveInfinity: nil )
   )
@@ -476,6 +485,8 @@ class Kernel vmMirror: vmMirror = Object <: Value (
 
     (* Printing *)
     public print = ( vmMirror printString: self )
+    
+    public matches: arg = ( ^ self == arg )
   ) : (
     public fromArray: charArray = (
       (* TODO: replace with a Smalltalk implementation to specifiy semantics

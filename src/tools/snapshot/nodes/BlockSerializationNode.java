@@ -185,7 +185,7 @@ public abstract class BlockSerializationNode extends AbstractSerializationNode {
       }
     }
 
-    return new SBlock(invokable, frame);
+    return new SBlock(invokable, null, frame); // FIXME: Second argument should be serialized
   }
 
   public static class BlockArgumentFixup extends FixupInformation {

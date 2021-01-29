@@ -421,8 +421,12 @@ public class JsonTreeTranslator {
    * @return The type expression for the node. Null if the type is unknown (or undefined).
    */
   private JsonObject typeFor(final JsonObject node) {
+    return typeFor(node, VmSettings.USE_TYPE_CHECKING);
+  }
+
+  private JsonObject typeFor(final JsonObject node, final boolean usingTypes) {
     // simply return null if type checking not used
-    if (!VmSettings.USE_TYPE_CHECKING) {
+    if (!usingTypes) {
       return null;
     }
 
@@ -454,6 +458,39 @@ public class JsonTreeTranslator {
    * Gets the parameter types for a declaration node.
    */
   private JsonObject[] typesForParameters(final JsonObject node) {
+    return typesForParameters(node, VmSettings.USE_TYPE_CHECKING);
+  }
+
+  private JsonObject[] typesForBlockParameters(final JsonObject node) {
+    List<JsonObject> types = new ArrayList<JsonObject>();
+    for (JsonElement parameterElement : node.get("parameters").getAsJsonArray()) {
+      String type = parameterElement.getAsJsonObject().get("nodetype").getAsString();
+      // Only add the parameter if it is an argument (and not a pattern)
+      if ("typed-parameter".equals(type) || "identifier".equals(type)) {
+        types.add(typeFor(parameterElement.getAsJsonObject(), VmSettings.USE_TYPE_CHECKING));
+      }
+    }
+    return types.toArray(new JsonObject[types.size()]);
+  }
+
+  private JsonObject patternForParameter(final JsonObject node) {
+    JsonArray params = node.get("parameters").getAsJsonArray();
+    if (params.size() == 0) {
+      return null;
+    }
+    JsonObject parameterElement = params.get(0).getAsJsonObject();
+    String type = parameterElement.get("nodetype").getAsString();
+    if ("identifier".equals(type)) {
+      // Argument with no type, should match anything
+      return null;
+    } else if ("typed-parameter".equals(type)) {
+      return typeFor(parameterElement, true);
+    } else {
+      return parameterElement;
+    }
+  }
+
+  private JsonObject[] typesForParameters(final JsonObject node, final boolean usingTypes) {
     List<JsonObject> types = new ArrayList<JsonObject>();
 
     if (node.has("signature")) {
@@ -463,13 +500,13 @@ public class JsonTreeTranslator {
 
         for (JsonElement parameterElement : partObject.get("parameters").getAsJsonArray()) {
           JsonObject parameterObject = parameterElement.getAsJsonObject();
-          types.add(typeFor(parameterObject));
+          types.add(typeFor(parameterObject, usingTypes));
         }
       }
 
     } else if (node.has("parameters")) {
       for (JsonElement parameterElement : node.get("parameters").getAsJsonArray()) {
-        types.add(typeFor(parameterElement.getAsJsonObject()));
+        types.add(typeFor(parameterElement.getAsJsonObject(), usingTypes));
       }
 
     } else {
@@ -479,6 +516,32 @@ public class JsonTreeTranslator {
     }
 
     return types.toArray(new JsonObject[types.size()]);
+  }
+
+  private SourceSection[] sourcesForBlockParameters(final JsonObject node) {
+    List<SourceSection> sources = new ArrayList<SourceSection>();
+    for (JsonElement parameterElement : node.get("parameters").getAsJsonArray()) {
+      String type = parameterElement.getAsJsonObject().get("nodetype").getAsString();
+      // Only add the parameter if it is an argument (and not a pattern)
+      if ("typed-parameter".equals(type) || "identifier".equals(type)) {
+        sources.add(source(parameterElement.getAsJsonObject()));
+      }
+    }
+    return sources.toArray(new SourceSection[sources.size()]);
+  }
+
+  private SSymbol[] blockParameters(final JsonObject node) {
+    List<SSymbol> parametersNames = new ArrayList<SSymbol>();
+
+    for (JsonElement parameterElement : node.get("parameters").getAsJsonArray()) {
+      String type = parameterElement.getAsJsonObject().get("nodetype").getAsString();
+      // Only add the parameter if it is an argument (and not a pattern)
+      if ("typed-parameter".equals(type) || "identifier".equals(type)) {
+        SSymbol name = symbolFor(name(parameterElement.getAsJsonObject()));
+        parametersNames.add(name);
+      }
+    }
+    return parametersNames.toArray(new SSymbol[parametersNames.size()]);
   }
 
   /**
@@ -696,8 +759,9 @@ public class JsonTreeTranslator {
       return null;
       // Translate a block literal
     } else if (nodeType(node).equals("block")) {
-      return astBuilder.objectBuilder.block(parameters(node), typesForParameters(node),
-          sourcesForParameters(node), locals(node), typesForLocals(node),
+      return astBuilder.objectBuilder.block(blockParameters(node), patternForParameter(node),
+          typesForBlockParameters(node),
+          sourcesForBlockParameters(node), locals(node), typesForLocals(node),
           isDefForLocals(node), sourcesForLocals(node), body(node), source(node));
       // Translate a def
     } else if (nodeType(node).equals("def-declaration")) {

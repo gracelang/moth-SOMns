@@ -20,11 +20,14 @@ import tools.debugger.Tags.LiteralTag;
 public class BlockNode extends LiteralNode {
 
   protected final SInvokable blockMethod;
+  protected final SInvokable patternMethod;
   protected final boolean    needsAdjustmentOnScopeChange;
 
-  public BlockNode(final SInvokable blockMethod, final boolean needsAdjustmentOnScopeChange) {
+  public BlockNode(final SInvokable blockMethod, final SInvokable patternMethod,
+      final boolean needsAdjustmentOnScopeChange) {
     this.blockMethod = blockMethod;
     this.needsAdjustmentOnScopeChange = needsAdjustmentOnScopeChange;
+    this.patternMethod = patternMethod;
   }
 
   @Override
@@ -54,7 +57,7 @@ public class BlockNode extends LiteralNode {
 
   @Override
   public SBlock executeSBlock(final VirtualFrame frame) {
-    return new SBlock(blockMethod, null);
+    return new SBlock(blockMethod, patternMethod, null);
   }
 
   @Override
@@ -79,7 +82,8 @@ public class BlockNode extends LiteralNode {
   }
 
   protected BlockNode createNode(final SInvokable adapted) {
-    return new BlockNode(adapted, needsAdjustmentOnScopeChange).initialize(sourceSection);
+    return new BlockNode(adapted, patternMethod, needsAdjustmentOnScopeChange).initialize(
+        sourceSection);
   }
 
   @Override
@@ -89,20 +93,21 @@ public class BlockNode extends LiteralNode {
 
   public static final class BlockNodeWithContext extends BlockNode {
 
-    public BlockNodeWithContext(final SInvokable blockMethod,
+    public BlockNodeWithContext(final SInvokable blockMethod, final SInvokable patternExpr,
         final boolean needsAdjustmentOnScopeChange) {
-      super(blockMethod, needsAdjustmentOnScopeChange);
+      super(blockMethod, patternExpr, needsAdjustmentOnScopeChange);
     }
 
     @Override
     public SBlock executeSBlock(final VirtualFrame frame) {
-      return new SBlock(blockMethod, frame.materialize());
+      return new SBlock(blockMethod, patternMethod, frame.materialize());
     }
 
     @Override
     protected BlockNode createNode(final SInvokable adapted) {
-      return new BlockNodeWithContext(adapted, needsAdjustmentOnScopeChange).initialize(
-          sourceSection);
+      return new BlockNodeWithContext(adapted, patternMethod,
+          needsAdjustmentOnScopeChange).initialize(
+              sourceSection);
     }
   }
 }

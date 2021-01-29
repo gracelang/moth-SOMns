@@ -1247,9 +1247,10 @@ public class NewspeakParser {
 
         ExpressionNode result;
         if (bgenc.requiresContext() || VmSettings.TRUFFLE_DEBUGGER_ENABLED) {
-          result = new BlockNodeWithContext(blockMethod, bgenc.accessesLocalOfOuterScope());
+          result =
+              new BlockNodeWithContext(blockMethod, null, bgenc.accessesLocalOfOuterScope());
         } else {
-          result = new BlockNode(blockMethod, bgenc.accessesLocalOfOuterScope());
+          result = new BlockNode(blockMethod, null, bgenc.accessesLocalOfOuterScope());
         }
         result.initialize(lastMethodsSourceSection);
         return result;

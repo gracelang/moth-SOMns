@@ -1,5 +1,6 @@
 package som.primitives;
 
+import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Cached;
@@ -17,6 +18,7 @@ import bd.primitives.Primitive;
 import som.instrumentation.InstrumentableDirectCallNode.InstrumentableBlockApplyNode;
 import som.interpreter.SArguments;
 import som.interpreter.SomLanguage;
+import som.interpreter.Types;
 import som.interpreter.nodes.ExceptionSignalingNode;
 import som.interpreter.nodes.ExpressionNode;
 import som.interpreter.nodes.SOMNode;
@@ -28,6 +30,7 @@ import som.primitives.arrays.AtPrimFactory;
 import som.vm.VmSettings;
 import som.vmobjects.SArray;
 import som.vmobjects.SBlock;
+import som.vmobjects.SClass;
 import som.vmobjects.SInvokable;
 import tools.dym.Tags.OpClosureApplication;
 
@@ -155,6 +158,36 @@ public abstract class BlockPrims {
         @Cached("create()") final IndirectCallNode call) {
       checkArguments(receiver, 2, argumentError);
       return receiver.getMethod().invoke(call, new Object[] {receiver, arg});
+    }
+  }
+
+  @GenerateNodeFactory
+  @Primitive(primitive = "blockMatches:with:", selector = "matches:", inParser = false)
+  public abstract static class BlockMatchPrim extends BinaryExpressionNode {
+
+    @Specialization()
+    public boolean matches(final SBlock receiver, final Object arg) {
+      if (receiver.getPattern() == null) {
+        return true; // Should return true as there is no pattern limiting what is expected
+      }
+
+      // Get the pattern of the block
+      DirectCallNode call = Truffle.getRuntime().createDirectCallNode(
+          receiver.getPattern().getCallTarget());
+      Object pattern = call.call(new Object[] {receiver});
+
+      // Call matches on pattern and return the result
+      SClass clazz = Types.getClassOf(pattern);
+      for (SInvokable i : clazz.getMethods()) {
+        if (i.getSignature().getString().equals("matches:")) {
+          CallTarget target = i.getCallTarget();
+          Boolean b = (Boolean) Truffle.getRuntime().createDirectCallNode(target)
+                                       .call(new Object[] {pattern, arg});
+          return b;
+        }
+      }
+      // FIXME: Not a pattern (as missing matches method), should signal an error instead
+      return false;
     }
   }
 
