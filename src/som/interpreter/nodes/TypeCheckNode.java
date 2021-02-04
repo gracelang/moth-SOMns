@@ -112,7 +112,8 @@ public abstract class TypeCheckNode extends BinaryExpressionNode {
    * Marker of whether an expression is a type check. Useful as not all type checks share the
    * same superclasses.
    */
-  public interface ATypeCheckNode {}
+  public interface ATypeCheckNode {
+  }
 
   /**
    * The common superclass for type checks that already have a resolved type.
@@ -305,7 +306,7 @@ public abstract class TypeCheckNode extends BinaryExpressionNode {
       // Otherwise prepare to call the type check method directly on the type
       CallTarget target = null;
       for (SInvokable invoke : expected.getSOMClass().getMethods()) {
-        if (invoke.getSignature().getString().equals("checkOrError:")) {
+        if (invoke.getSignature().getString().equals("matches:")) {
           target = invoke.getCallTarget();
           break;
         }
@@ -502,7 +503,9 @@ public abstract class TypeCheckNode extends BinaryExpressionNode {
         final SObjectWithClass obj) {
       try {
         return guard.entryMatches(obj, null);
-      } catch (InvalidAssumptionException e) {} catch (IllegalArgumentException e) {}
+      } catch (InvalidAssumptionException e) {
+      } catch (IllegalArgumentException e) {
+      }
       return false;
     }
 
@@ -816,25 +819,18 @@ public abstract class TypeCheckNode extends BinaryExpressionNode {
         ++numTypeCheckExecutions;
       }
 
-      try {
-        // Otherwise execute the type check method on the expected type
-        CompilerDirectives.transferToInterpreterAndInvalidate();
-        Truffle.getRuntime().createDirectCallNode(target)
-               .call(new Object[] {expected, argument});
-        // Since it finished executing, the type check passed
-        if (isSub != null) {
-          isSub.put(Types.getClassOf(argument).type, true);
-        }
-      } catch (SomException e) {
-        // If the check threw an error, throw a type check error
-        SType argType = Types.getClassOf(argument).type;
-        if (isSub != null) {
-          isSub.put(argType, false);
-        }
-        throwTypeError(argument, argType, expected, sourceSection, exception);
-        throw e;
+      // Otherwise execute the type check method on the expected type
+      CompilerDirectives.transferToInterpreterAndInvalidate();
+      boolean result = (Boolean) Truffle.getRuntime().createDirectCallNode(target)
+                                        .call(new Object[] {expected, argument});
+      // Since it finished executing, the type check passed
+      SType argType = Types.getClassOf(argument).type;
+      if (isSub != null) {
+        isSub.put(argType, result);
       }
-
+      if (!result) {
+        throwTypeError(argument, argType, expected, sourceSection, exception);
+      }
       return argument;
     }
   }

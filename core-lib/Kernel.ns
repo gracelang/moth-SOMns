@@ -75,8 +75,7 @@ class Kernel vmMirror: vmMirror = Object <: Value (
 
   public class Type = Value ()
   (
-    public checkOrError: aObj = ( vmMirror type: self checkOrError: aObj )
-    public matches: aObj = (^ [self checkOrError: aObj. true] on: Exception do: [ :e | false])
+    public matches: aObj = (^ vmMirror type: self matches: aObj )
   )
 
   public class Object = Thing ()

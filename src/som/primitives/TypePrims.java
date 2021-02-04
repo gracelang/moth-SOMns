@@ -1,7 +1,6 @@
 package som.primitives;
 
 import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.GenerateNodeFactory;
 import com.oracle.truffle.api.dsl.Specialization;
 
@@ -11,6 +10,7 @@ import som.interpreter.nodes.ExceptionSignalingNode;
 import som.interpreter.nodes.nary.BinaryExpressionNode;
 import som.interpreter.nodes.nary.UnaryExpressionNode;
 import som.vm.Symbols;
+import som.vm.constants.Classes;
 import som.vm.constants.Nil;
 import som.vmobjects.SArray;
 import som.vmobjects.SBlock;
@@ -98,7 +98,7 @@ public final class TypePrims {
    * VM Hook used as default behaviour when directly calling the type check method on a type.
    */
   @GenerateNodeFactory
-  @Primitive(primitive = "type:checkOrError:")
+  @Primitive(primitive = "type:matches:")
   public abstract static class TypeCheckPrim extends BinaryExpressionNode {
 
     protected void throwTypeError(final SType expected, final Object obj) {
@@ -129,54 +129,43 @@ public final class TypePrims {
 
     @Specialization(guards = {"isNil(obj)"})
     public Object performTypeCheckOnNil(final SType expected, final SObjectWithoutFields obj) {
-      return Nil.nilObject;
-    }
-
-    @Specialization(guards = {"expected.isSuperTypeOf(obj.getSOMClass().type, obj)"})
-    public Object checkObject(final SType expected, final SObjectWithClass obj) {
-      return Nil.nilObject;
-    }
-
-    @Specialization(guards = {"expected.isSuperTypeOf(cachedFactory.type, obj)"})
-    public Object checkBoolean(final SType expected, final boolean obj,
-        @Cached("getClass(obj)") final SClass cachedFactory) {
-      return Nil.nilObject;
-    }
-
-    @Specialization(guards = {"expected.isSuperTypeOf(cachedFactory.type, obj)"})
-    public Object checkLong(final SType expected, final long obj,
-        @Cached("getClass(obj)") final SClass cachedFactory) {
-      return Nil.nilObject;
-    }
-
-    @Specialization(guards = {"expected.isSuperTypeOf(cachedFactory.type, obj)"})
-    public Object checkDouble(final SType expected, final double obj,
-        @Cached("getClass(obj)") final SClass cachedFactory) {
-      return Nil.nilObject;
-    }
-
-    @Specialization(guards = {"expected.isSuperTypeOf(cachedFactory.type, obj)"})
-    public Object checkString(final SType expected, final String obj,
-        @Cached("getClass(obj)") final SClass cachedFactory) {
-      return Nil.nilObject;
-    }
-
-    @Specialization(guards = {"expected.isSuperTypeOf(cachedFactory.type, obj)"})
-    public Object checkSArray(final SType expected, final SArray obj,
-        @Cached("getClass(obj)") final SClass cachedFactory) {
-      return Nil.nilObject;
-    }
-
-    @Specialization(guards = {"expected.isSuperTypeOf(cachedFactory.type, obj)"})
-    public Object checkSBlock(final SType expected, final SBlock obj,
-        @Cached("getClass(obj)") final SClass cachedFactory) {
-      return Nil.nilObject;
+      return true;
     }
 
     @Specialization
-    public Object typeCheckFailed(final SType expected, final Object argument) {
-      throwTypeError(expected, argument);
-      return null;
+    public Object checkObject(final SType expected, final SObjectWithClass obj) {
+      return expected.isSuperTypeOf(obj.getSOMClass().type, obj);
+    }
+
+    @Specialization
+    public Object checkBoolean(final SType expected, final boolean obj) {
+      return expected.isSuperTypeOf(obj ? Classes.trueClass.type : Classes.falseClass.type,
+          obj);
+    }
+
+    @Specialization
+    public Object checkLong(final SType expected, final long obj) {
+      return expected.isSuperTypeOf(Classes.integerClass.type, obj);
+    }
+
+    @Specialization
+    public Object checkDouble(final SType expected, final double obj) {
+      return expected.isSuperTypeOf(Classes.doubleClass.type, obj);
+    }
+
+    @Specialization
+    public Object checkString(final SType expected, final String obj) {
+      return expected.isSuperTypeOf(Classes.stringClass.type, obj);
+    }
+
+    @Specialization
+    public Object checkSArray(final SType expected, final SArray obj) {
+      return expected.isSuperTypeOf(Classes.arrayClass.type, obj);
+    }
+
+    @Specialization
+    public Object checkSBlock(final SType expected, final SBlock obj) {
+      return expected.isSuperTypeOf(Classes.blockClass.type, obj);
     }
 
     @Specialization
@@ -184,7 +173,7 @@ public final class TypePrims {
       ExceptionSignalingNode exception = insert(
           ExceptionSignalingNode.createNode(Symbols.symbolFor("TypeError"), sourceSection));
       exception.signal("The type has not defined the meaning of what it is to be a type.");
-      return Nil.nilObject;
+      return false;
     }
   }
 }
