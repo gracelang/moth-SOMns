@@ -27,6 +27,7 @@ class Kernel vmMirror: vmMirror = Object <: Value (
 
   public class Thing = Top ()(
     protected error: msg = ( vmMirror printNewline: 'ERROR: ' + msg. vmMirror exit: 1 )
+    protected exit = ( vmMirror exit: 1 )
 
     (* Error recovering *)
     protected doesNotUnderstand: selector arguments: arguments = (
@@ -96,6 +97,20 @@ class Kernel vmMirror: vmMirror = Object <: Value (
 
     public matches: arg = ( ^ self == arg )
   )
+  
+  public class GraceException raiseWith: argument = Exception (
+    | public arg = argument. |
+    self signal.
+  )(
+
+    public asString = (
+      ^ 'GraceError: ' + arg message + ''.
+    )
+    
+    public packet = (
+        ^ arg
+    )
+  )
 
   (* Transfer objects are handled almost identically to normal objects.
      They are mutable. The main difference to normal objects is that they are
@@ -130,7 +145,7 @@ class Kernel vmMirror: vmMirror = Object <: Value (
     (* Logical operations *)
     public || boolean = ( ^ self or: boolean  )
     public && boolean = ( ^ self and: boolean )
-    
+
     public matches: arg = ( ^ self == arg )
   )
 
@@ -265,7 +280,7 @@ class Kernel vmMirror: vmMirror = Object <: Value (
     public max: otherInt = (
       self < otherInt ifTrue: [ ^ otherInt ] ifFalse: [ ^ self ]
     )
-    
+
     public matches: arg = ( ^ self == arg )
   ) : (
     public fromString: aString = ( ^ vmMirror intFromString: aString )
@@ -325,7 +340,7 @@ class Kernel vmMirror: vmMirror = Object <: Value (
       i:: self.
       [ i >= limit ] whileTrue: [ block value: i. i:: i - 1.0 ]
     )
-    
+
     public matches: arg = ( ^ self == arg )
   ) : (
     public PositiveInfinity = ( ^ vmMirror doublePositiveInfinity: nil )
@@ -484,7 +499,7 @@ class Kernel vmMirror: vmMirror = Object <: Value (
 
     (* Printing *)
     public print = ( vmMirror printString: self )
-    
+
     public matches: arg = ( ^ self == arg )
   ) : (
     public fromArray: charArray = (
@@ -999,7 +1014,7 @@ class Kernel vmMirror: vmMirror = Object <: Value (
     self signal.
   )(
     public asString = (
-      ^ 'Error' + arg + ''.
+      ^ 'Error: ' + arg + ''.
     )
   )
 
