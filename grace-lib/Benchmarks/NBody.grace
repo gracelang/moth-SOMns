@@ -42,7 +42,7 @@ class newNBody -> harness.Benchmark {
   method innerBenchmarkLoop (innerIterations: Number) -> Boolean {
     var system: NBodySystem := newNBodySystem
 
-    1.asInteger.to(innerIterations) do { i: Number ->
+    1.to(innerIterations) do { i: Number ->
       system.advance(0.01)
     }
 
@@ -75,15 +75,15 @@ class newNBodySystem -> NBodySystem {
       pz := pz + (b.vz * b.mass)
     }
 
-    bodies.at(1.asInteger).offsetMomentumX (px) y (py) z (pz)
+    bodies.at(1).offsetMomentumX (px) y (py) z (pz)
     bodies
   }
 
   method advance (dt: Number) -> Done {
-    1.asInteger.to (bodies.size) do { i: Number ->
+    1.to (bodies.size) do { i: Number ->
       var iBody: Body := bodies.at(i)
 
-      (i + 1.asInteger).to (bodies.size) do { j: Number ->
+      (i + 1).to (bodies.size) do { j: Number ->
         var jBody: Body := bodies.at(j)
         var dx: Number := iBody.x - jBody.x
         var dy: Number := iBody.y - jBody.y
@@ -113,14 +113,14 @@ class newNBodySystem -> NBodySystem {
   method energy -> Number {
     var e: Number := 0.0
 
-    1.asInteger.to (bodies.size) do { i: Number ->
+    1.to (bodies.size) do { i: Number ->
       var iBody: Body := bodies.at(i)
 
       e := e + (0.5 * iBody.mass * ((iBody.vx * iBody.vx) +
                                     (iBody.vy * iBody.vy) +
                                     (iBody.vz * iBody.vz)))
 
-      (i + 1.asInteger).to (bodies.size) do { j: Number ->
+      (i + 1).to (bodies.size) do { j: Number ->
         var jBody: Body := bodies.at(j)
         var dx: Number := iBody.x - jBody.x
         var dy: Number := iBody.y - jBody.y

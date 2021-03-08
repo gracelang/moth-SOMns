@@ -43,8 +43,8 @@ class newFloat -> harness.Benchmark {
   method innerBenchmarkLoop(innerIterations: Number) -> Boolean {
     var points: List := platform.kernel.Array.new(innerIterations)
 
-    1.asInteger.to(innerIterations) do { i: Number ->
-      points.at(i)put(newPoint(i - 1))
+    1.to(innerIterations) do { i: Number ->
+      points.at(i)put(newPoint(i - 1.0))
     }
 
     points.do { p: Point ->
@@ -56,8 +56,8 @@ class newFloat -> harness.Benchmark {
   }
 
   method maximize(points: List) -> Point {
-    var next: Point := points.at(1.asInteger)
-    2.asInteger.to(points.size) do { i: Number ->
+    var next: Point := points.at(1)
+    2.to(points.size) do { i: Number ->
       def p: Point = points.at(i)
       next := next.maximize(p)
     }

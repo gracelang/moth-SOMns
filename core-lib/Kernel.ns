@@ -193,7 +193,6 @@ class Kernel vmMirror: vmMirror = Object <: Value (
     public sqrt        = ( ^ vmMirror intSqrt: self )
     public negated     = ( ^ 0 - self )
     public round       = ( ^ self ) (* added to be polymorphic with Double *)
-    public asInteger   = ( ^ self )
 
     (* Bit operations *)
     public & argument  = ( ^ vmMirror int: self bitAnd: argument )

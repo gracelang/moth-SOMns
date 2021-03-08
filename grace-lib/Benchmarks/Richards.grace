@@ -3,14 +3,14 @@ import "harness" as harness
 def NoTask: Done = done
 def NoWork: Done = done
 
-def            Idler: Number = 1.asInteger
-def           Worker: Number = 2.asInteger
-def   WorkPacketKind: Number = 2.asInteger
-def         HandlerA: Number = 3.asInteger
-def         HandlerB: Number = 4.asInteger
-def          DeviceA: Number = 5.asInteger
-def          DeviceB: Number = 6.asInteger
-def DevicePacketKind: Number = 1.asInteger
+def            Idler: Number = 1
+def           Worker: Number = 2
+def   WorkPacketKind: Number = 2
+def         HandlerA: Number = 3
+def         HandlerB: Number = 4
+def          DeviceA: Number = 5
+def          DeviceB: Number = 6
+def DevicePacketKind: Number = 1
 
 def tracing: Boolean = false
 
@@ -112,11 +112,11 @@ class newRBObject -> RBObject {
 class newScheduler -> Scheduler {
   var taskList: TaskControlBlock    := NoTask
   var currentTask: TaskControlBlock := NoTask
-  var currentTaskIdentity: Number   := 0.asInteger
-  var taskTable: List               := platform.kernel.Array.new(6.asInteger) withAll (NoTask)
-  var layout: Number                := 0.asInteger
-  var queuePacketCount: Number      := 0.asInteger
-  var holdCount: Number             := 0.asInteger
+  var currentTaskIdentity: Number   := 0
+  var taskTable: List               := platform.kernel.Array.new(6) withAll (NoTask)
+  var layout: Number                := 0
+  var queuePacketCount: Number      := 0
+  var holdCount: Number             := 0
 
   method createDevice (identity: Number) priority (priority: Number)
                  work (work: Packet) state (state: TaskState) -> Done {
@@ -168,7 +168,7 @@ class newScheduler -> Scheduler {
               wait
             } ifFalse {
               var count: Number := workPacket.datum
-              (count > 4.asInteger).ifTrue {
+              (count > 4).ifTrue {
                 data.workIn(workPacket.link)
                 queuePacket(workPacket)
               } ifFalse {
@@ -178,7 +178,7 @@ class newScheduler -> Scheduler {
                 } ifFalse {
                   data.deviceIn(devicePacket.link)
                   devicePacket.datum(workPacket.data.at(count))
-                  workPacket.datum(count + 1.asInteger)
+                  workPacket.datum(count + 1)
                   queuePacket(devicePacket)
                 }
               }
@@ -193,15 +193,15 @@ class newScheduler -> Scheduler {
     createTask(identity) priority(priority) work(work) state(state)
          function { work: Packet, word: RBObject ->
            var data: RBObject := word
-           data.count(data.count - 1.asInteger)
-           (0.asInteger == data.count).ifTrue {
+           data.count(data.count - 1)
+           (0 == data.count).ifTrue {
             holdSelf
            } ifFalse {
-             (0.asInteger == (data.control & 1.asInteger)).ifTrue {
-               data.control((data.control / 2.asInteger).asInteger)
+             (0 == (data.control & 1)).ifTrue {
+               data.control((data.control / 2))
                release(DeviceA)
              } ifFalse {
-               data.control(((data.control / 2.asInteger).asInteger).bitXor(53256.asInteger))
+               data.control(((data.control / 2)).bitXor(53256))
                release(DeviceB)
              }
            }
@@ -237,11 +237,11 @@ class newScheduler -> Scheduler {
               data.destination := (HandlerA == data.destination).ifTrue { HandlerB } ifFalse { HandlerA }
 
               work.identity(data.destination)
-              work.datum(1.asInteger)
-              1.asInteger.to(4.asInteger) do { i: Number ->
-               data.count (data.count + 1.asInteger)
-               (data.count > 26.asInteger).ifTrue { data.count(1.asInteger) }
-               work.data.at(i)put(65.asInteger + data.count - 1.asInteger)
+              work.datum(1)
+              1.to(4) do { i: Number ->
+               data.count (data.count + 1)
+               (data.count > 26).ifTrue { data.count(1) }
+               work.data.at(i)put(65 + data.count - 1)
               }
 
               queuePacket(work)
@@ -253,27 +253,27 @@ class newScheduler -> Scheduler {
   method start -> Boolean {
     var workQ: Packet
 
-    createIdler(Idler) priority(0.asInteger) work(NoWork) state(newTaskStateRunning)
+    createIdler(Idler) priority(0) work(NoWork) state(newTaskStateRunning)
     workQ := createPacket(NoWork) identity(Worker) kind(WorkPacketKind)
     workQ := createPacket(workQ) identity(Worker) kind(WorkPacketKind)
-    createWorker(Worker) priority(1000.asInteger) work(workQ) state(newTaskStateWaitingWithPacket)
+    createWorker(Worker) priority(1000) work(workQ) state(newTaskStateWaitingWithPacket)
 
     workQ := createPacket(NoWork) identity(DeviceA) kind(DevicePacketKind)
     workQ := createPacket(workQ) identity(DeviceA) kind(DevicePacketKind)
     workQ := createPacket(workQ) identity(DeviceA) kind(DevicePacketKind)
 
-    createHandler(HandlerA) priority(2000.asInteger) work(workQ) state(newTaskStateWaitingWithPacket)
+    createHandler(HandlerA) priority(2000) work(workQ) state(newTaskStateWaitingWithPacket)
     workQ := createPacket(NoWork) identity(DeviceB) kind(DevicePacketKind)
     workQ := createPacket(workQ) identity(DeviceB) kind(DevicePacketKind)
     workQ := createPacket(workQ) identity(DeviceB) kind(DevicePacketKind)
 
-    createHandler(HandlerB) priority(3000.asInteger) work(workQ) state (newTaskStateWaitingWithPacket)
-    createDevice(DeviceA) priority(4000.asInteger) work(NoWork) state (newTaskStateWaiting)
-    createDevice(DeviceB) priority(5000.asInteger) work(NoWork) state (newTaskStateWaiting)
+    createHandler(HandlerB) priority(3000) work(workQ) state (newTaskStateWaitingWithPacket)
+    createDevice(DeviceA) priority(4000) work(NoWork) state (newTaskStateWaiting)
+    createDevice(DeviceB) priority(5000) work(NoWork) state (newTaskStateWaiting)
 
     schedule
 
-    (queuePacketCount == 23246.asInteger) && (holdCount == 9297.asInteger)
+    (queuePacketCount == 23246) && (holdCount == 9297)
   }
 
   method findTask (identity: Number) -> TaskControlBlock {
@@ -283,7 +283,7 @@ class newScheduler -> Scheduler {
   }
 
   method holdSelf -> TaskControlBlock {
-    holdCount := holdCount + 1.asInteger
+    holdCount := holdCount + 1
     currentTask.taskHolding(true)
     currentTask.link
   }
@@ -292,7 +292,7 @@ class newScheduler -> Scheduler {
     var t: TaskControlBlock := findTask(packet.identity)
     (NoTask == t).ifTrue { return NoTask }
 
-    queuePacketCount := queuePacketCount + 1.asInteger
+    queuePacketCount := queuePacketCount + 1
     packet.link(NoWork)
     packet.identity(currentTaskIdentity)
     return t.addInput(packet) checkPriority(currentTask)
@@ -306,10 +306,10 @@ class newScheduler -> Scheduler {
   }
 
   method trace (id: Number) -> Done {
-    layout := layout - 1.asInteger
-    (0.asInteger >= layout).ifTrue {
+    layout := layout - 1
+    (0 >= layout).ifTrue {
       print("")
-      layout := 50.asInteger
+      layout := 50
     }
     print(id.asString)
   }
@@ -340,8 +340,8 @@ class Packet (link': Packet) identity (identity': Number) kind (kind': Number) -
   var     link: Packet := link'
   var identity: Number := identity'
   var     kind: Number := kind'
-  var    datum: Number := 1.asInteger
-  var     data: List := platform.kernel.Array.new(4.asInteger)withAll(0.asInteger)
+  var    datum: Number := 1
+  var     data: List := platform.kernel.Array.new(4)withAll(0)
 
   method asString -> String {
     "Packet({link.asString}, {identity.asString}, {kind.asString}, {datum.asString}, {data.asString})"
@@ -374,8 +374,8 @@ class newHandlerTaskDataRecord -> HandlerTaskDataRecord {
 class newIdleTaskDataRecord -> IdleTaskDataRecord {
   inherit newRBObject
 
-  var control: Number := 1.asInteger
-  var count: Number := 10000.asInteger
+  var control: Number := 1
+  var count: Number := 10000
 }
 
 class newTaskState -> TaskState {
@@ -515,7 +515,7 @@ class newWorkerTaskDataRecord -> WorkerTaskDataRecord {
   inherit newRBObject
 
   var destination: Number := HandlerA
-  var count: Number := 0.asInteger
+  var count: Number := 0
 }
 
 method newInstance -> harness.Benchmark { newRichards }

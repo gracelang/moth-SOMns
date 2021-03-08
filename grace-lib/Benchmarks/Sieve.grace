@@ -29,24 +29,24 @@ class newSieve -> harness.Benchmark {
   inherit harness.newBenchmark
 
   method benchmark -> Number {
-    var flags: List := platform.kernel.Array.new(5000.asInteger)withAll(true)
-    return sieve(flags)size(5000.asInteger)
+    var flags: List := platform.kernel.Array.new(5000)withAll(true)
+    return sieve(flags)size(5000)
   }
 
   method verifyResult(result: Number) -> Boolean {
-    669.asInteger == result
+    669 == result
   }
 
   method sieve(flags: List) size(size: Number) -> Number {
-    var primeCount: Number := 0.asInteger
+    var primeCount: Number := 0
 
-    2.asInteger.to(size) do { i: Number ->
-      flags.at(i - 1.asInteger).ifTrue {
-        primeCount := primeCount + 1.asInteger
+    2.to(size) do { i: Number ->
+      flags.at(i - 1).ifTrue {
+        primeCount := primeCount + 1
 
         var k: Number := i + i
         { k <= size }.whileTrue {
-          flags.at (k - 1.asInteger) put (false)
+          flags.at (k - 1) put (false)
           k := k + i
         }
       }

@@ -15,39 +15,39 @@ type imm = VmMirror.typeCapability("IMMUTABLE")
 type local = VmMirror.typeCapability("LOCAL")
 type unsafe = VmMirror.typeCapability("UNSAFE")
 
-class newChannel {
-  def inner = platform.processes.Channel.new
+class newChannel -> Unknown {
+  def inner: Unknown = platform.processes.Channel.new
 
-  method imm { ioImm(inner.in, inner.out) }
-  method iso { ioIso(inner.in, inner.out) }
-  method local { ioLocal(inner.in, inner.out) }
-  method unsafe { ioUnsafe(inner.in, inner.out) }
+  method imm -> Unknown { ioImm(inner.in, inner.out) }
+  method iso -> Unknown { ioIso(inner.in, inner.out) }
+  method local -> Unknown { ioLocal(inner.in, inner.out) }
+  method unsafe -> Unknown { ioUnsafe(inner.in, inner.out) }
 
   //Unchecked
-  method read { inner.in.read }
-  method <- (value) { inner.out.write(value) }
+  method read -> Unknown { inner.in.read }
+  method <- (value: Unknown) -> Unknown { inner.out.write(value) }
 }
 
-class ioImm(in, out) {
-  method read { imm.cast(in.read) }
-  method <- (value) { out.write(imm.cast(value)) }
+class ioImm(in: Unknown, out: Unknown) -> Unknown {
+  method read -> Unknown { imm.cast(in.read) }
+  method <- (value: Unknown) -> Unknown { out.write(imm.cast(value)) }
 }
-class ioIso(in, out) {
-  method read { iso.cast(in.read) }
-  method <- (value) { out.write(consume(iso.cast(value))) }
+class ioIso(in: Unknown, out: Unknown) -> Unknown {
+  method read -> Unknown { iso.cast(in.read) }
+  method <- (value: Unknown) -> Unknown { out.write(consume(iso.cast(value))) }
 }
-class ioLocal(in, out) {
-  method read { local.cast(in.read) }
-  method <- (value) { out.write(local.cast(value)) }
+class ioLocal(in: Unknown, out: Unknown) -> Unknown {
+  method read -> Unknown { local.cast(in.read) }
+  method <- (value: Unknown) -> Unknown { out.write(local.cast(value)) }
 }
-class ioUnsafe(in, out) {
-  method read { unsafe.cast(in.read) }
-  method <- (value) { out.write(unsafe.cast(value)) }
+class ioUnsafe(in: Unknown, out: Unknown) -> Unknown {
+  method read -> Unknown { unsafe.cast(in.read) }
+  method <- (value: Unknown) -> Unknown { out.write(unsafe.cast(value)) }
 }
 
-def null = done
+def null: Unknown = done
 
-method let(x) in(b) {
+method let(x: Unknown) in(b: Unknown) -> Unknown {
     b.apply(x)// := null)
 }
 
@@ -80,8 +80,8 @@ method let(x) in(b) {
 //  method <- (value) { io.out.write(unsafe.cast(value)) }
 //}
 
-method spawn (b) {
-    var channel := newChannel
+method spawn (b: Unknown) -> Unknown {
+    var channel: Unknown := newChannel
     platform.threading.Task.spawn (b) with [channel]
     channel
 }

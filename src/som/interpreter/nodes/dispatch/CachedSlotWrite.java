@@ -111,6 +111,7 @@ public abstract class CachedSlotWrite extends AbstractDispatchNode {
       }
 
       if (error != null) {
+        CompilerDirectives.transferToInterpreterAndInvalidate();
         // Get the human-readable version of the source location
         int line = sourceSection.getStartLine();
         int column = sourceSection.getStartColumn();
@@ -170,6 +171,7 @@ public abstract class CachedSlotWrite extends AbstractDispatchNode {
       }
 
       if (error != null) {
+        CompilerDirectives.transferToInterpreterAndInvalidate();
         // Get the human-readable version of the source location
         int line = sourceSection.getStartLine();
         int column = sourceSection.getStartColumn();

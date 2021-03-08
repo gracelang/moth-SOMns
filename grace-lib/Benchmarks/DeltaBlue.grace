@@ -72,14 +72,14 @@ type Constraint = interface {
   satisfy(_)propagate(_)
 }
 
-def SymAbsoluteStrongest : Sym = newSym(0.asInteger)
-def SymRequired          : Sym = newSym(1.asInteger)
-def SymStrongPreferred   : Sym = newSym(2.asInteger)
-def SymPreferred         : Sym = newSym(3.asInteger)
-def SymStrongDefault     : Sym = newSym(4.asInteger)
-def SymDefault           : Sym = newSym(5.asInteger)
-def SymWeakDefault       : Sym = newSym(6.asInteger)
-def SymAbsoluteWeakest   : Sym = newSym(7.asInteger)
+def SymAbsoluteStrongest : Sym = newSym 0
+def SymRequired          : Sym = newSym 1
+def SymStrongPreferred   : Sym = newSym 2
+def SymPreferred         : Sym = newSym 3
+def SymStrongDefault     : Sym = newSym 4
+def SymDefault           : Sym = newSym 5
+def SymWeakDefault       : Sym = newSym 6
+def SymAbsoluteWeakest   : Sym = newSym 7
 
 def strengthTable: core.Dictionary = createStrengthTable
 def strengthConstants: core.Dictionary = createStrengthConstants
@@ -114,7 +114,7 @@ class newDeltaBlue -> harness.Benchmark {
 // changing inputs.
 
 class newPlan -> core.Vector {
-  inherit core.newVector(15.asInteger)
+  inherit core.newVector 15
 
   method execute -> Done {
     // Execute my constraints in order
@@ -137,7 +137,7 @@ type Planner = interface {
 //
 // To run the benchmark, execute the expression `Planner standardBenchmark`.
 class newPlanner -> Planner {
-  var currentMark: Number := 1.asInteger
+  var currentMark: Number := 1
 
   method incrementalAdd(c: Constraint) -> Done {
     // Attempt to satisfy the given constraint and, if successful,
@@ -269,7 +269,7 @@ class newPlanner -> Planner {
   method changeVar(aVariable: Variable) newValue(newValue: Number) -> Done {
     def editConstraint: Constraint = newEditConstraint(aVariable, SymPreferred, self)
     def plan: Plan = extractPlanFromConstraints(core.newVectorWith(editConstraint))
-    1.asInteger.to(10.asInteger)do { i: Number ->
+    1.to(10)do { i: Number ->
       aVariable.value(newValue)
       plan.execute
     }
@@ -293,7 +293,7 @@ class newPlanner -> Planner {
     // slower to compute the next mark but the algorithms will all behave
     // correctly. We reserve the value '0' to mean 'unmarked'. Thus, this
     // generator starts at '1' and will never produce '0' as a mark value.
-    currentMark := currentMark + 1.asInteger
+    currentMark := currentMark + 1
     return currentMark
   }
 
@@ -326,12 +326,12 @@ class newPlanner -> Planner {
 method plannerChainTest(n: Number) -> Done {
   // Do chain-of-equality-constraints performance tests
   def planner: Planner = newPlanner
-  def vars: List = platform.kernel.Array.new(n + 1.asInteger)withAll{ newVariable }
+  def vars: List = platform.kernel.Array.new(n + 1)withAll{ newVariable }
 
   // thread a chain of equality constraints through the variables
-  1.asInteger.to(n)do{ i: Number ->
+  1.to(n)do{ i: Number ->
     def v1: Variable = vars.at(i)
-    def v2: Variable = vars.at(i + 1.asInteger)
+    def v2: Variable = vars.at(i + 1)
     newEqualityConstraint(v1, v2, SymRequired, planner)
   }
 
@@ -339,7 +339,7 @@ method plannerChainTest(n: Number) -> Done {
   def editConstraint: Constraint = newEditConstraint(vars.first, SymPreferred, planner)
   def plan: Plan = planner.extractPlanFromConstraints(core.newVectorWith(editConstraint))
 
-  1.asInteger.to(100.asInteger)do{ v: Number ->
+  1.to(100)do{ v: Number ->
     vars.first.value(v)
     plan.execute
     (vars.last.value != v).ifTrue { error("Chain test failed!!") }
@@ -353,13 +353,13 @@ method plannerProjectionTest(n: Number) -> Done {
   // a simple linear transformation (scale and offset).
   def planner: Planner = newPlanner
   def dests: core.Vector = core.newVector
-  def scale: Variable = newVariableValue(10.asInteger)
-  def offset: Variable = newVariableValue(1000.asInteger)
+  def scale: Variable = newVariableValue(10)
+  def offset: Variable = newVariableValue(1000)
 
   var src: Variable
   var dst: Variable
 
-  1.asInteger.to(n)do{ i: Number ->
+  1.to(n)do{ i: Number ->
     src := newVariableValue(i)
     dst := newVariableValue(i)
     dests.append(dst)
@@ -367,22 +367,22 @@ method plannerProjectionTest(n: Number) -> Done {
     newScaleConstraint(src, scale, offset, dst, SymRequired, planner)
   }
 
-  planner.changeVar(src)newValue(17.asInteger)
+  planner.changeVar(src)newValue(17)
   (dst.value != 1170).ifTrue { error("Projection test 1 failed!!") }
 
-  planner.changeVar(dst)newValue(1050.asInteger)
+  planner.changeVar(dst)newValue(1050)
   (src.value != 5).ifTrue { error("Projection test 2 failed!!") }
 
-  planner.changeVar(scale)newValue(5.asInteger)
-  1.asInteger.to(n - 1.asInteger)do { i: Number ->
-    (dests.at(i).value != ((i * 5) + 1000).asInteger).ifTrue {
+  planner.changeVar(scale)newValue(5)
+  1.to(n - 1)do { i: Number ->
+    (dests.at(i).value != ((i * 5) + 1000)).ifTrue {
       error("Projection test 3 failed!!")
     }
   }
 
-  planner.changeVar(offset)newValue(2000.asInteger)
-  1.asInteger.to(n - 1.asInteger)do{ i: Number ->
-    (dests.at(i).value != ((i * 5) + 2000).asInteger).ifTrue {
+  planner.changeVar(offset)newValue(2000)
+  1.to(n - 1)do{ i: Number ->
+    (dests.at(i).value != ((i * 5) + 2000)).ifTrue {
       error("Projection test 4 failed!!")
     }
   }
@@ -935,12 +935,12 @@ class newVariable -> Variable {
   //     walkStrength        my walkabout strength <Strength>
   //     stay            true if I am a planning-time constant <Boolean>
   //     mark            used by the planner to mark constraints <Number> *)
-  var value: Number        := 0.asInteger
-  def constraints: core.Vector  = core.newVector(2.asInteger)
+  var value: Number        := 0
+  def constraints: core.Vector  = core.newVector 2
   var determinedBy: Constraint := done
   var walkStrength: Strength   := AbsoluteWeakest
   var stay: Boolean            := true
-  var mark: Number             := 0.asInteger
+  var mark: Number             := 0
 
 
   method addConstraint(aConstraint: Constraint) -> Done {

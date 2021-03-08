@@ -35,7 +35,7 @@ class newQueens -> harness.Benchmark {
   method benchmark -> Boolean {
     var result: Boolean := true
 
-    1.asInteger.to(10.asInteger) do { j: Number ->
+    1.to(10) do { j: Number ->
       result := result.and(queens)
     }
     result
@@ -46,21 +46,21 @@ class newQueens -> harness.Benchmark {
   }
 
   method queens -> Boolean {
-    freeRows  := platform.kernel.Array.new( 8.asInteger)withAll(true)
-    freeMaxs  := platform.kernel.Array.new(16.asInteger)withAll(true)
-    freeMins  := platform.kernel.Array.new(16.asInteger)withAll(true)
-    queenRows := platform.kernel.Array.new( 8.asInteger)withAll(-1.asInteger)
-    placeQueen(1.asInteger)
+    freeRows  := platform.kernel.Array.new( 8)withAll(true)
+    freeMaxs  := platform.kernel.Array.new(16)withAll(true)
+    freeMins  := platform.kernel.Array.new(16)withAll(true)
+    queenRows := platform.kernel.Array.new( 8)withAll(-1)
+    placeQueen(1)
   }
 
   method placeQueen (c: Number) -> Boolean {
-    1.asInteger.to(8.asInteger) do { r: Number ->
+    1.to(8) do { r: Number ->
       row (r) column (c) .ifTrue {
         queenRows.at (r) put (c)
         row (r) column (c) put (false)
 
-        (c == 8.asInteger).ifTrue { return true }
-        placeQueen(c + 1.asInteger).ifTrue { return true }
+        (c == 8).ifTrue { return true }
+        placeQueen(c + 1).ifTrue { return true }
         row (r) column (c) put (true)
       }
     }
@@ -69,13 +69,13 @@ class newQueens -> harness.Benchmark {
   }
 
   method row (r: Number) column (c: Number) -> Boolean {
-    freeRows.at(r) && freeMaxs.at(c + r) && freeMins.at(c - r + 8.asInteger)
+    freeRows.at(r) && freeMaxs.at(c + r) && freeMins.at(c - r + 8)
   }
 
   method row (r: Number) column (c: Number) put (v: Boolean) -> Done {
     freeRows.at( r                   ) put (v)
     freeMaxs.at( c + r               ) put (v)
-    freeMins.at( c - r + 8.asInteger ) put (v)
+    freeMins.at( c - r + 8 ) put (v)
     Done
   }
 }

@@ -1,5 +1,6 @@
 package som.interpreter.nodes;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.instrumentation.GenerateWrapper;
 import com.oracle.truffle.api.instrumentation.ProbeNode;
@@ -150,6 +151,7 @@ public abstract class ArgumentReadNode {
       }
 
       if (error != null) {
+        CompilerDirectives.transferToInterpreterAndInvalidate();
         // Get the human-readable version of the source location
         int line = sourceSection.getStartLine();
         int column = sourceSection.getStartColumn();

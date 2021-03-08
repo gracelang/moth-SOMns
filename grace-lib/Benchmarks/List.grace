@@ -37,9 +37,9 @@ class newListElement(n: Number) -> ListElement {
 
   method length -> Number {
     next.isNil.ifTrue {
-      return 1.asInteger
+      return 1
     } ifFalse {
-      return 1.asInteger + next.length
+      return 1 + next.length
     }
   }
 }
@@ -63,7 +63,7 @@ class newList -> harness.Benchmark {
       return done
     } ifFalse {
       var e: ListElement := newListElement(length)
-      e.next(makeList(length - 1.asInteger))
+      e.next(makeList(length - 1))
       return e
     }
   }

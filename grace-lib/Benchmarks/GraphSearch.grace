@@ -28,13 +28,13 @@ type Vector = interface {
   do(block)
 }
 
-def MinEdges: Number     = 2.asInteger
-def MaxInitEdges: Number = 4.asInteger
-def MinWeight: Number    = 1.asInteger
-def MaxWeight: Number    = 1.asInteger
+def MinEdges: Number     = 2
+def MaxInitEdges: Number = 4
+def MinWeight: Number    = 1
+def MaxWeight: Number    = 1
 
-def ExpectedNoOfNodes: Number = 3000000.asInteger
-def ExpectedTotalCost: Number = 26321966.asInteger
+def ExpectedNoOfNodes: Number = 3000000
+def ExpectedTotalCost: Number = 26321966
 
 type Edge = interface {
   dest
@@ -66,8 +66,8 @@ class newGraphSearch -> harness.Benchmark {
   var graphEdges: List
 
   method innerBenchmarkLoop(innerIterations: Number) -> Boolean {
-    def random: harness.Random = harness.newJenkins(49734321.asInteger)
-    def noOfNodes: Number = (ExpectedNoOfNodes / 1000.asInteger).asInteger * innerIterations
+    def random: harness.Random = harness.newJenkins(49734321)
+    def noOfNodes: Number = (ExpectedNoOfNodes / 1000) * innerIterations
 
     initializeGraph (noOfNodes) with (random)
     breadthFirstSearch (noOfNodes)
@@ -76,11 +76,11 @@ class newGraphSearch -> harness.Benchmark {
   }
 
   method verify(innerIterations: Number) -> Boolean {
-    (cost.size == ((ExpectedNoOfNodes / 1000.asInteger).asInteger * innerIterations)).ifFalse {
+    (cost.size == ((ExpectedNoOfNodes / 1000) * innerIterations)).ifFalse {
       return false
     }
 
-    var totalCost: Number := 0.asInteger
+    var totalCost: Number := 0
     cost.do { c: Number ->
       totalCost := totalCost + c
     }
@@ -104,40 +104,40 @@ class newGraphSearch -> harness.Benchmark {
     graphVisited       := platform.kernel.Array.new (noOfNodes) withAll(false)
     cost               := platform.kernel.Array.new (noOfNodes) withAll(-1)
 
-    var source: Number := 1.asInteger
+    var source: Number := 1
     var graph: List := platform.kernel.Array.new (noOfNodes) withAll { platform.kernel.Vector.new }
 
     graph.doIndexes { i: Number ->
-      var noOfEdges: Number := random.next.rem(MaxInitEdges - MinEdges + 1.asInteger).abs + MinEdges
+      var noOfEdges: Number := random.next.rem(MaxInitEdges - MinEdges + 1).abs + MinEdges
 
-      1.asInteger.to (noOfEdges) do { j: Number ->
-        var nodeId: Number := (random.next.rem(noOfNodes)).abs + 1.asInteger
-        var weight: Number := (random.next.rem(MaxWeight - MinWeight + 1.asInteger)).abs + MinWeight
+      1.to (noOfEdges) do { j: Number ->
+        var nodeId: Number := (random.next.rem(noOfNodes)).abs + 1
+        var weight: Number := (random.next.rem(MaxWeight - MinWeight + 1)).abs + MinWeight
         graph.at(i).append(newEdge (nodeId) and (weight))
         graph.at(nodeId).append(newEdge (i) and (weight))
       }
     }
 
-    var totalEdges: Number := 0.asInteger
+    var totalEdges: Number := 0
     graph.doIndexes { i: Number ->
       var noOfEdges: Number := graph.at(i).size
-      graphNodes.at (i) put (newNode (totalEdges + 1.asInteger) and (noOfEdges))
+      graphNodes.at (i) put (newNode (totalEdges + 1) and (noOfEdges))
       totalEdges := totalEdges + noOfEdges
     }
 
     graphMask.at (source) put (true)
     graphVisited.at (source) put (true)
 
-    graphEdges := platform.kernel.Array.new (totalEdges) withAll (0.asInteger)
+    graphEdges := platform.kernel.Array.new (totalEdges) withAll (0)
 
-    var k: Number := 1.asInteger
+    var k: Number := 1
     graph.do { i: Vector ->
       i.do { j: Edge ->
         graphEdges.at (k) put (j.dest)
-        k := k + 1.asInteger
+        k := k + 1
       }
     }
-    cost.at (source) put (0.asInteger)
+    cost.at (source) put (0)
   }
 
   method breadthFirstSearch (noOfNodes: Number) -> Done {
@@ -146,21 +146,21 @@ class newGraphSearch -> harness.Benchmark {
     { stop }.whileTrue {
       stop := false
 
-      1.asInteger.to (noOfNodes) do { tid: Number ->
+      1.to (noOfNodes) do { tid: Number ->
         graphMask.at(tid).ifTrue {
           graphMask.at(tid)put (false)
-          graphNodes.at (tid).starting.to (graphNodes.at(tid).noOfEdges + graphNodes.at(tid).starting - 1.asInteger)
+          graphNodes.at (tid).starting.to (graphNodes.at(tid).noOfEdges + graphNodes.at(tid).starting - 1)
               do { i: Number ->
             var id: Number := graphEdges.at (i)
             graphVisited.at (id). ifFalse {
-              cost. at (id) put (cost.at(tid) + 1.asInteger)
+              cost. at (id) put (cost.at(tid) + 1)
               updatingGraphMask.at (id) put (true)
             }
           }
         }
       }
 
-      1.asInteger.to(noOfNodes) do { tid: Number ->
+      1.to(noOfNodes) do { tid: Number ->
         updatingGraphMask.at(tid). ifTrue {
           graphMask.at (tid) put (true)
           graphVisited.at (tid) put (true)

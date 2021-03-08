@@ -1,8 +1,8 @@
 import "harness" as harness
 
 
-def BOARDHEIGHT: Number = 20.asInteger
-def BOARDWIDTH: Number  = 30.asInteger
+def BOARDHEIGHT: Number = 20
+def BOARDWIDTH: Number  = 30
 
 type Position = interface {
   x
@@ -44,15 +44,15 @@ class newSnake(segments': List) -> Snake {
   }
 
   method collidedWithWall -> Boolean {
-    (head.x <= 0.asInteger) || (
+    (head.x <= 0) || (
       head.x >= BOARDWIDTH)  || (
-        head.y <= 0.asInteger) || (
+        head.y <= 0) || (
           head.y >= BOARDHEIGHT)
   }
 
   method collidedWithSelf -> Boolean {
-    1.asInteger.to(segments.size) do { i: Number ->
-      (i + 1.asInteger).to(segments.size) do { j: Number ->
+    1.to(segments.size) do { i: Number ->
+      (i + 1).to(segments.size) do { j: Number ->
         (samePosition(segments.at(i), segments.at(j))).ifTrue {
           return true
         }
@@ -62,16 +62,16 @@ class newSnake(segments': List) -> Snake {
   }
 
   method nextHead -> Position {
-    ("right" == direction). ifTrue { return newPosition(head.x + 1.asInteger, head.y              ) }
-    ("left"  == direction). ifTrue { return newPosition(head.x - 1.asInteger, head.y              ) }
-    ("down"  == direction). ifTrue { return newPosition(head.x,               head.y - 1.asInteger) }
-    ("up"    == direction). ifTrue { return newPosition(head.x,               head.y + 1.asInteger) }
+    ("right" == direction). ifTrue { return newPosition(head.x + 1, head.y              ) }
+    ("left"  == direction). ifTrue { return newPosition(head.x - 1, head.y              ) }
+    ("down"  == direction). ifTrue { return newPosition(head.x,               head.y - 1) }
+    ("up"    == direction). ifTrue { return newPosition(head.x,               head.y + 1) }
     error("{direction} not understood as a direction?")
   }
 
   method slither -> Done {
     segments.append(nextHead)
-    segments.remove(segments.at(1.asInteger))
+    segments.remove(segments.at(1))
     done
   }
 
@@ -106,19 +106,19 @@ type World = interface {
 class newWorld -> World {
   var snake: Snake
   var food: Position
-  var moves: Number := 0.asInteger
+  var moves: Number := 0
   var random: harness.Random
 
   method reset -> Done {
     random := harness.newRandom
-    random.seed := 1324.asInteger
+    random.seed := 1324
 
     var segments: List := platform.kernel.Vector.new
-    segments.append(newPosition(10.asInteger, 15.asInteger))
+    segments.append(newPosition(10, 15))
     snake := newSnake(segments)
     snake.direction := "right"
     food := randomPosition
-    moves := 0.asInteger
+    moves := 0
   }
 
   method isGameOver -> Boolean {
@@ -134,8 +134,8 @@ class newWorld -> World {
   }
 
   method randomPosition -> Position {
-     newPosition ( randomBetween(1.asInteger)and(BOARDWIDTH - 1.asInteger),
-                   randomBetween(1.asInteger)and(BOARDHEIGHT - 1.asInteger) )
+     newPosition ( randomBetween(1)and(BOARDWIDTH - 1),
+                   randomBetween(1)and(BOARDHEIGHT - 1) )
   }
 
   method tick -> Done {
@@ -146,7 +146,7 @@ class newWorld -> World {
       snake.slither
     }
 
-    moves := moves + 1.asInteger
+    moves := moves + 1
   }
 
   method handleKey (key: String) -> Done {
@@ -252,8 +252,8 @@ class newSnakeBenchmark -> harness.Benchmark {
   }
 
   method verifyResult(world: World) -> Boolean {
-    (world.moves == 157.asInteger) &&
-      (world.snake.segments.size == 10.asInteger) &&
+    (world.moves == 157) &&
+      (world.snake.segments.size == 10) &&
       (world.isGameOver)
   }
 }

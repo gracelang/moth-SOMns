@@ -93,7 +93,7 @@ class newJson -> harness.Benchmark {
     result.isObject.ifFalse { return false }
     result.asObject.at("head").isObject.ifFalse { return false }
     result.asObject.at("operations").isArray.ifFalse { return false }
-    return result.asObject.at("operations").asArray.size == 156.asInteger
+    return result.asObject.at("operations").asArray.size == 156
   }
 }
 
@@ -143,12 +143,12 @@ type JsonParser = interface {
 
 class newJsonParserWith (string: String) -> JsonParser {
   def input: String = string
-  var index: Number := 0.asInteger
-  var line: Number  := 1.asInteger
-  var column: Number := 0.asInteger
+  var index: Number := 0
+  var line: Number  := 1
+  var column: Number := 0
   var current: String := done
   var captureBuffer: String := ""
-  var captureStart: Number := -1.asInteger
+  var captureStart: Number := -1
 
   method parse -> JsonObject {
     read
@@ -385,12 +385,12 @@ class newJsonParserWith (string: String) -> JsonParser {
 
   method read -> Done {
     (current == "\n"). ifTrue {
-      line := line + 1.asInteger
-      column := 0.asInteger
+      line := line + 1
+      column := 0
     }
 
-    index := index + 1.asInteger
-    column := column + 1.asInteger
+    index := index + 1
+    column := column + 1
 
     input.ifNil { error("input Done") }
     (index <= input.length).ifTrue {
@@ -408,21 +408,21 @@ class newJsonParserWith (string: String) -> JsonParser {
   }
 
   method pauseCapture -> Done {
-    captureBuffer := captureBuffer.concatenate (input.substringFrom (captureStart) to (index - 1.asInteger))
-    captureStart := -1.asInteger
+    captureBuffer := captureBuffer.concatenate (input.substringFrom (captureStart) to (index - 1))
+    captureStart := -1
     done
   }
 
   method endCapture -> String {
     var captured: String
     ("" == captureBuffer).ifTrue {
-      captured := input.substringFrom (captureStart) to (index - 1.asInteger)
+      captured := input.substringFrom (captureStart) to (index - 1)
     } ifFalse {
       pauseCapture
       captured := captureBuffer
       captureBuffer := ""
     }
-    captureStart := -1.asInteger
+    captureStart := -1
     return captured
   }
 
@@ -475,15 +475,15 @@ type HashIndexTable = interface {
 }
 
 class newHashIndexTable -> HashIndexTable {
-  def hashTable: List = Array.new (32.asInteger) withAll (0.asInteger)
+  def hashTable: List = Array.new (32) withAll (0)
 
   method at (name: String) put (index: Number) -> Done {
     var slot: Number := hashSlotFor(name)
 
-    (index < 255.asInteger). ifTrue {
-      hashTable. at (slot) put (index + 1.asInteger)
+    (index < 255). ifTrue {
+      hashTable. at (slot) put (index + 1)
     } ifFalse {
-      hashTable. at (slot) put (0.asInteger)
+      hashTable. at (slot) put (0)
     }
 
     done
@@ -493,17 +493,17 @@ class newHashIndexTable -> HashIndexTable {
     var slot: Number := hashSlotFor (name)
 
     // subtract 1, 0 stands for empty
-    return hashTable.at(slot).bitAnd(255.asInteger) - 1.asInteger
+    return hashTable.at(slot).bitAnd(255) - 1
   }
 
   method stringHash (s: String) -> Number {
     // this is not a proper hash, but sufficient for the benchmark,
     //   and very portable!
-    return s.length * 1402589.asInteger
+    return s.length * 1402589
   }
 
   method hashSlotFor (element: String) -> Number {
-    return stringHash(element).bitAnd(hashTable.size - 1.asInteger) + 1.asInteger
+    return stringHash(element).bitAnd(hashTable.size - 1) + 1
   }
 }
 
@@ -589,7 +589,7 @@ class newJsonObject -> JsonObject {
     name.ifNil { error("name is null" ) }
     aJsonValue.ifNil { error("aJsonValue is null") }
 
-    table.at (name) put (names.size + 1.asInteger) // + 1 for 1-based indexing
+    table.at (name) put (names.size + 1) // + 1 for 1-based indexing
     names.append(name)
     values.append(aJsonValue)
     done
@@ -598,7 +598,7 @@ class newJsonObject -> JsonObject {
   method at (name: String) -> JsonValue {
     name.ifNil { error("name is null") }
     var idx: Number := indexOf(name)
-    (idx == 0.asInteger). ifTrue {
+    (idx == 0). ifTrue {
       return done
     } ifFalse {
       return values.at(idx)
@@ -616,7 +616,7 @@ class newJsonObject -> JsonObject {
 
   method indexOf (name: String) -> Number {
     var idx: Number := table.at (name)
-    (idx != 0.asInteger).ifTrue {
+    (idx != 0).ifTrue {
       (name == names.at(idx)).ifTrue { return idx }
     }
 
